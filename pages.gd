@@ -118,7 +118,7 @@ func setup(main_game: Node3D) -> void:
 	capsule_hud.add_child(grid)
 	for i in range(3):
 		var tile := Button.new()
-		tile.text = ["МАГИЯ\\n100 МОНЕТ", "ЛЁД\\n100 МОНЕТ", "ОГОНЬ\\n100 МОНЕТ"][i].replace("\\n", "\n")
+		tile.text = ["МАГИЯ", "ЛЁД", "ОГОНЬ"][i] + " 100"
 		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tile.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		tile.add_theme_font_size_override("font_size", 21)

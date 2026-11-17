@@ -138,7 +138,7 @@ impl ApplicationHandler for App {
                         })],
                         depth_stencil_attachment: None, timestamp_writes: None, occlusion_query_set: None,
                     });
-                    g.renderer.render(&mut pass, &shapes, &descriptor);
+                    g.renderer.render(&mut pass.forget_lifetime(), &shapes, &descriptor);
                 }
                 g.gpu.queue.submit(Some(encoder.finish()));
                 frame.present();

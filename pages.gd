@@ -5,6 +5,8 @@ var page: PanelContainer
 var capsule_hud: Control
 var tab_buttons: Array[Button] = []
 var selected_capsule: int = 0
+var capsule_touch_start := Vector2.ZERO
+var capsule_dragged := false
 var capsule_prices := [100, 150, 200, 300, 450, 600, 800, 1000]
 var heading: Label
 var body: VBoxContainer
@@ -109,72 +111,46 @@ func setup(main_game: Node3D) -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)
 	capsule_hud = Control.new()
-	capsule_hud.anchor_left = 0.035
-	capsule_hud.anchor_right = 0.965
-	capsule_hud.anchor_top = 0.15
+	capsule_hud.anchor_left = 0
+	capsule_hud.anchor_right = 1
+	capsule_hud.anchor_top = 0.09
 	capsule_hud.anchor_bottom = 1.0
-	capsule_hud.offset_bottom = -126
+	capsule_hud.offset_bottom = -124
+	capsule_hud.mouse_filter = Control.MOUSE_FILTER_STOP
+	capsule_hud.gui_input.connect(_capsule_input)
 	add_child(capsule_hud)
-	var title := Label.new()
-	title.text = "КАПСУЛЫ"
-	title.anchor_right = 1.0
-	title.offset_bottom = 62
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 38)
-	title.add_theme_color_override("font_color", Color("#ffe8a3"))
-	capsule_hud.add_child(title)
-	var scroll := ScrollContainer.new()
-	scroll.anchor_left = 0.0
-	scroll.anchor_right = 1.0
-	scroll.anchor_top = 0.0
-	scroll.anchor_bottom = 1.0
-	scroll.offset_top = 72
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	capsule_hud.add_child(scroll)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 18)
-	scroll.add_child(grid)
-	for i in range(capsule_prices.size()):
-		var tile := Button.new()
-		tile.text = ""
-		tile.custom_minimum_size = Vector2(0, 285)
-		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tile.add_theme_stylebox_override("normal", _cartoon_style(0, 28))
-		tile.add_theme_stylebox_override("hover", _cartoon_style(0, 28))
-		tile.add_theme_stylebox_override("pressed", _cartoon_style(2, 28))
-		tile.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		tile.pressed.connect(_select_capsule.bind(i))
-		grid.add_child(tile)
-		var egg := TextureRect.new()
-		egg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		egg.anchor_left = 0.10
-		egg.anchor_right = 0.90
-		egg.anchor_top = 0.04
-		egg.anchor_bottom = 0.76
-		egg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		egg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		var atlas := AtlasTexture.new()
-		atlas.atlas = load("res://egg_pet_atlas.svg")
-		atlas.region = Rect2(0, 0, 256, 256)
-		egg.texture = atlas
-		egg.modulate = [Color("#e2b4ff"), Color("#9eeeff"), Color("#ffe19b"), Color("#a4ffc5"), Color("#ffb3d3"), Color("#ffbc8e"), Color("#b4baff"), Color("#f8e38e")][i]
-		tile.add_child(egg)
-		var price := Label.new()
-		price.text = str(capsule_prices[i]) + " МОНЕТ"
-		price.anchor_left = 0
-		price.anchor_right = 1
-		price.anchor_top = 0.78
-		price.anchor_bottom = 0.98
-		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		price.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		price.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		price.add_theme_font_size_override("font_size", 21)
-		price.add_theme_color_override("font_color", Color("#fff0ac"))
-		tile.add_child(price)
+	var top_tabs := HBoxContainer.new()
+	top_tabs.anchor_left = 0.06
+	top_tabs.anchor_right = 0.94
+	top_tabs.offset_top = 12
+	top_tabs.offset_bottom = 80
+	top_tabs.mouse_filter = Control.MOUSE_FILTER_PASS
+	capsule_hud.add_child(top_tabs)
+	for label_text in ["КАПСУЛЫ", "МОИ ПИТОМЦЫ"]:
+		var tab_button := Button.new()
+		tab_button.text = label_text
+		tab_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab_button.add_theme_font_size_override("font_size", 23)
+		tab_button.add_theme_stylebox_override("normal", _cartoon_style(2, 25))
+		tab_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		if label_text == "МОИ ПИТОМЦЫ":
+			tab_button.pressed.connect(_show_pets)
+		else:
+			tab_button.pressed.connect(func() -> void: show_page(1))
+		top_tabs.add_child(tab_button)
+	var instruction := Label.new()
+	instruction.text = "НАЖМИ НА 3D-КАПСУЛУ • ЛИСТАЙ ВНИЗ"
+	instruction.anchor_left = 0
+	instruction.anchor_right = 1
+	instruction.anchor_top = 1
+	instruction.anchor_bottom = 1
+	instruction.offset_top = -60
+	instruction.offset_bottom = -12
+	instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	instruction.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	instruction.add_theme_font_size_override("font_size", 19)
+	instruction.add_theme_color_override("font_color", Color("#342a63"))
+	capsule_hud.add_child(instruction)
 	_load_inventory()
 	show_page(0)
 
@@ -212,7 +188,7 @@ func show_page(tab: int) -> void:
 	for i in range(tab_buttons.size()):
 		tab_buttons[i].add_theme_stylebox_override("normal", _cartoon_style(5 if i == tab else 1, 25))
 	capsule_hud.visible = tab == 1
-	game.set_capsule_scene(false)
+	game.set_capsule_scene(tab == 1)
 	game.score_label.visible = home
 	game.combo_label.visible = home
 	game.hp_label.visible = home
@@ -232,6 +208,39 @@ func show_page(tab: int) -> void:
 	else:
 		heading.text = "НАСТРОЙКИ"
 		feedback.text = "CLICKER MANIA\nЗВУК И ГРАФИКА\nСКОРО"
+
+func _capsule_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			capsule_touch_start = event.position
+			capsule_dragged = false
+		elif not capsule_dragged:
+			var selected := game.capsule_at_screen(event.position)
+			if selected >= 0:
+				_select_capsule(selected)
+	elif event is InputEventScreenDrag:
+		capsule_dragged = true
+		game.scroll_capsules(event.relative.y * 0.012)
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			game.scroll_capsules(0.65)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			game.scroll_capsules(-0.65)
+		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			var selected := game.capsule_at_screen(event.position)
+			if selected >= 0:
+				_select_capsule(selected)
+
+func _show_pets() -> void:
+	page.visible = true
+	capsule_hud.visible = false
+	game.set_capsule_scene(false)
+	heading.text = "МОИ ПИТОМЦЫ"
+	feedback.text = "ПОЛУЧЕНО: " + str(inventory.size())
+	for pet in inventory:
+		feedback.text += "\n" + str(pet)
+	egg_button.visible = false
+	body.get_node("Action").visible = false
 
 func _select_capsule(index: int) -> void:
 	selected_capsule = index

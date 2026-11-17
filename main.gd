@@ -321,6 +321,7 @@ func _ui_atlas_style(tile: int, margin: float = 34.0) -> StyleBoxTexture:
 	style.texture_margin_right = margin
 	style.texture_margin_top = margin
 	style.texture_margin_bottom = margin
+	style.draw_center = true
 	style.content_margin_left = 12
 	style.content_margin_right = 12
 	style.content_margin_top = 12
@@ -329,51 +330,58 @@ func _ui_atlas_style(tile: int, margin: float = 34.0) -> StyleBoxTexture:
 
 func _build_bottom_menu(root: Control) -> void:
 	menu_panel = PanelContainer.new()
+	menu_panel.anchor_left = 0.035
+	menu_panel.anchor_right = 0.965
 	menu_panel.anchor_top = 1.0
 	menu_panel.anchor_bottom = 1.0
-	menu_panel.anchor_right = 1.0
-	menu_panel.offset_top = -190
-	menu_panel.offset_bottom = 0
-	menu_panel.add_theme_stylebox_override("panel", _ui_atlas_style(0))
+	menu_panel.offset_top = -176
+	menu_panel.offset_bottom = -16
+	menu_panel.add_theme_stylebox_override("panel", _ui_atlas_style(0, 28))
 	root.add_child(menu_panel)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", 10)
 	menu_panel.add_child(row)
 	var xp_column := VBoxContainer.new()
-	xp_column.custom_minimum_size = Vector2(190, 120)
+	xp_column.custom_minimum_size = Vector2(145, 95)
 	xp_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	xp_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	xp_column.add_theme_constant_override("separation", 8)
 	row.add_child(xp_column)
 	level_text = Label.new()
-	level_text.text = "⭐ УРОВЕНЬ 1"
-	level_text.add_theme_font_size_override("font_size", 21)
+	level_text.text = "УРОВЕНЬ 1"
+	level_text.add_theme_font_size_override("font_size", 19)
 	xp_column.add_child(level_text)
 	level_progress = ProgressBar.new()
-	level_progress.custom_minimum_size = Vector2(0, 24)
+	level_progress.custom_minimum_size = Vector2(145, 22)
+	level_progress.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	level_progress.max_value = 100
 	level_progress.show_percentage = false
-	var xp_fill := StyleBoxFlat.new()
-	xp_fill.bg_color = Color("#59dc73")
-	xp_fill.set_corner_radius_all(10)
-	level_progress.add_theme_stylebox_override("fill", _ui_atlas_style(4, 22))
-	level_progress.add_theme_stylebox_override("background", _ui_atlas_style(3, 22))
+	level_progress.add_theme_stylebox_override("fill", _ui_atlas_style(4, 18))
+	level_progress.add_theme_stylebox_override("background", _ui_atlas_style(3, 18))
 	xp_column.add_child(level_progress)
 	var click_button := Button.new()
-	click_button.text = "⚡\nКЛИК"
-	click_button.custom_minimum_size = Vector2(145, 145)
-	click_button.add_theme_font_size_override("font_size", 28)
-	click_button.add_theme_stylebox_override("normal", _ui_atlas_style(1))
-	click_button.add_theme_stylebox_override("pressed", _ui_atlas_style(5))
+	click_button.text = "КЛИК"
+	click_button.custom_minimum_size = Vector2(125, 125)
+	click_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	click_button.add_theme_font_size_override("font_size", 25)
+	click_button.add_theme_color_override("font_color", Color.WHITE)
+	click_button.add_theme_stylebox_override("normal", _ui_atlas_style(1, 30))
+	click_button.add_theme_stylebox_override("hover", _ui_atlas_style(1, 30))
+	click_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	click_button.add_theme_stylebox_override("pressed", _ui_atlas_style(5, 30))
 	click_button.pressed.connect(func() -> void: _tap(get_viewport().get_visible_rect().size * 0.5))
 	row.add_child(click_button)
 	var pets_button := Button.new()
-	pets_button.text = "🐾 ПИТОМЦЫ"
-	pets_button.custom_minimum_size = Vector2(180, 84)
+	pets_button.text = "ПИТОМЦЫ"
+	pets_button.custom_minimum_size = Vector2(165, 78)
 	pets_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pets_button.add_theme_font_size_override("font_size", 21)
-	pets_button.add_theme_stylebox_override("normal", _ui_atlas_style(2, 68))
-	pets_button.add_theme_stylebox_override("pressed", _ui_atlas_style(0, 68))
+	pets_button.add_theme_font_size_override("font_size", 19)
+	pets_button.add_theme_color_override("font_color", Color.WHITE)
+	pets_button.add_theme_stylebox_override("normal", _ui_atlas_style(2, 58))
+	pets_button.add_theme_stylebox_override("hover", _ui_atlas_style(2, 58))
+	pets_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	pets_button.add_theme_stylebox_override("pressed", _ui_atlas_style(0, 58))
 	pets_button.pressed.connect(_open_menu.bind(1))
 	row.add_child(pets_button)
 	menu_info = Label.new()

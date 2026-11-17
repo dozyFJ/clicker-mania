@@ -1,6 +1,6 @@
 extends Control
 
-var game: Node3D
+var game
 var page: PanelContainer
 var capsule_hud: Control
 var tab_buttons: Array[Button] = []
@@ -21,7 +21,7 @@ var current_pet := ""
 var pet_names := ["ЛИСЁНОК", "КОТЁНОК", "ДРАКОНЧИК", "ЗАЙЧИК", "ВОЛЧОНОК"]
 var pet_colors := [Color("#ffad51"), Color("#a8d9ff"), Color("#ae87ff"), Color("#ffb4db"), Color("#9ce3b5")]
 
-func setup(main_game: Node3D) -> void:
+func setup(main_game) -> void:
 	game = main_game
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

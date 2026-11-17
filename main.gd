@@ -407,6 +407,18 @@ func _setup_ui() -> void:
 	var pages := preload("res://pages.gd").new()
 	root.add_child(pages)
 	pages.setup(self)
+	# Keep the shared navigation on top of the legacy combat dock.
+	pages.z_index = 20
+	var build_tag := Label.new()
+	build_tag.text = "CLICKER MANIA • UI V3"
+	build_tag.anchor_right = 1.0
+	build_tag.offset_top = 12
+	build_tag.offset_bottom = 40
+	build_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	build_tag.add_theme_font_size_override("font_size", 16)
+	build_tag.add_theme_color_override("font_color", Color("#ffe8a5"))
+	build_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(build_tag)
 
 
 var player_xp: int = 0

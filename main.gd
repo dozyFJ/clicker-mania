@@ -316,27 +316,25 @@ func _build_bottom_menu(root: Control) -> void:
 	menu_panel.anchor_top = 1.0
 	menu_panel.anchor_bottom = 1.0
 	menu_panel.anchor_right = 1.0
-	menu_panel.offset_top = -245
+	menu_panel.offset_top = -190
 	menu_panel.offset_bottom = 0
 	menu_panel.add_theme_stylebox_override("panel", _rounded_style(Color("#17243d"), Color("#354c73"), 18))
 	root.add_child(menu_panel)
-	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 9)
-	menu_panel.add_child(layout)
-	var header := HBoxContainer.new()
-	layout.add_child(header)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	menu_panel.add_child(row)
+	var xp_column := VBoxContainer.new()
+	xp_column.custom_minimum_size = Vector2(190, 120)
+	xp_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	xp_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(xp_column)
 	level_text = Label.new()
 	level_text.text = "⭐ УРОВЕНЬ 1"
-	level_text.add_theme_font_size_override("font_size", 24)
-	level_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(level_text)
-	var coins_title := Label.new()
-	coins_title.text = "CLICKER MANIA"
-	coins_title.add_theme_font_size_override("font_size", 20)
-	coins_title.add_theme_color_override("font_color", Color("#61e0ff"))
-	header.add_child(coins_title)
+	level_text.add_theme_font_size_override("font_size", 21)
+	xp_column.add_child(level_text)
 	level_progress = ProgressBar.new()
-	level_progress.custom_minimum_size = Vector2(0, 22)
+	level_progress.custom_minimum_size = Vector2(0, 24)
 	level_progress.max_value = 100
 	level_progress.show_percentage = false
 	var xp_fill := StyleBoxFlat.new()
@@ -344,28 +342,27 @@ func _build_bottom_menu(root: Control) -> void:
 	xp_fill.set_corner_radius_all(10)
 	level_progress.add_theme_stylebox_override("fill", xp_fill)
 	level_progress.add_theme_stylebox_override("background", _rounded_style(Color("#0b1429"), Color("#415b7b"), 10))
-	layout.add_child(level_progress)
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 9)
-	layout.add_child(tabs)
-	var names := ["⚡ КЛИК", "🐾 ПЕТЫ", "🃏 КАРТЫ", "🎒 СУМКА"]
-	for i in range(names.size()):
-		var button := Button.new()
-		button.text = names[i]
-		button.custom_minimum_size = Vector2(0, 78)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 19)
-		button.add_theme_stylebox_override("normal", _rounded_style(Color("#2c4166"), Color("#526b94"), 17))
-		button.add_theme_stylebox_override("hover", _rounded_style(Color("#395987"), Color("#65d8ff"), 17))
-		button.add_theme_stylebox_override("pressed", _rounded_style(Color("#197da0"), Color("#6beaff"), 17))
-		button.pressed.connect(_open_menu.bind(i))
-		tabs.add_child(button)
+	xp_column.add_child(level_progress)
+	var click_button := Button.new()
+	click_button.text = "⚡\nКЛИК"
+	click_button.custom_minimum_size = Vector2(145, 145)
+	click_button.add_theme_font_size_override("font_size", 28)
+	click_button.add_theme_stylebox_override("normal", _rounded_style(Color("#2284b3"), Color("#7ae8ff"), 22))
+	click_button.add_theme_stylebox_override("pressed", _rounded_style(Color("#116186"), Color("#d4faff"), 22))
+	click_button.pressed.connect(func() -> void: _tap(get_viewport().get_visible_rect().size * 0.5))
+	row.add_child(click_button)
+	var pets_button := Button.new()
+	pets_button.text = "🐾 ПИТОМЦЫ"
+	pets_button.custom_minimum_size = Vector2(180, 84)
+	pets_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pets_button.add_theme_font_size_override("font_size", 21)
+	pets_button.add_theme_stylebox_override("normal", _rounded_style(Color("#55418b"), Color("#bba6ff"), 42))
+	pets_button.add_theme_stylebox_override("pressed", _rounded_style(Color("#37265f"), Color("#d9cfff"), 42))
+	pets_button.pressed.connect(_open_menu.bind(1))
+	row.add_child(pets_button)
 	menu_info = Label.new()
-	menu_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_info.add_theme_font_size_override("font_size", 20)
-	menu_info.add_theme_color_override("font_color", Color("#c4d8f4"))
-	layout.add_child(menu_info)
-	_open_menu(0)
+	menu_info.visible = false
+	root.add_child(menu_info)
 	_update_player_level()
 
 func _open_menu(tab: int) -> void:

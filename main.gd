@@ -11,6 +11,8 @@ const APK_URL := "https://github.com/dozyFJ/clicker-mania/releases/download/late
 var coins: int = 0
 var combo: int = 0
 var last_tap: float = -100.0
+var capsule_world: Node3D
+var arena_parts: Array[Node3D] = []
 var hero: Node3D
 var camera: Camera3D
 var score_label: Label
@@ -92,6 +94,7 @@ func _setup_world() -> void:
 	camera.current = true
 
 	_build_arena()
+	_build_capsule_world()
 	hero = Node3D.new()
 	add_child(hero)
 	_spawn_enemy()
@@ -106,6 +109,7 @@ func _atlas_box(pos: Vector3, size: Vector3, tile: int, tint: Color = Color.WHIT
 	mat.set_shader_parameter("tile_rect", Vector4(float(tile % 4) / 4.0, float(tile / 4) / 2.0, 0.25, 0.5))
 	mat.set_shader_parameter("tint_color", Vector4(tint.r, tint.g, tint.b, 1.0))
 	part.material_override = mat
+	arena_parts.append(part)
 
 func _build_arena() -> void:
 	# Layered ground and paved center, visible from the isometric camera.
@@ -141,6 +145,47 @@ func _build_arena() -> void:
 	for p in [Vector3(-3.25, 0, 0.5), Vector3(3.3, 0, -0.5)]:
 		_atlas_box(p + Vector3(0, 0.28, 0), Vector3(0.75, 0.85, 0.75), 6)
 		_atlas_box(p + Vector3(0, 0.74, 0), Vector3(0.82, 0.12, 0.82), 3)
+
+func _build_capsule_world() -> void:
+	capsule_world = Node3D.new()
+	capsule_world.visible = false
+	add_child(capsule_world)
+	_capsule_box(Vector3(0, -0.42, 0), Vector3(11.5, 0.65, 11.5), Color("#75d5ed"))
+	_capsule_box(Vector3(0, -0.07, 0), Vector3(8.5, 0.12, 7.8), Color("#e4d8ff"))
+	for x in [-4.4, 4.4]:
+		for z in [-4.0, 4.0]:
+			_capsule_box(Vector3(x, 0.8, z), Vector3(0.65, 2.0, 0.65), Color("#8d69d8"))
+			_capsule_box(Vector3(x, 1.8, z), Vector3(1.05, 0.25, 1.05), Color("#ffe2a1"))
+	for i in range(3):
+		var x := float(i - 1) * 2.7
+		_capsule_box(Vector3(x, 0.15, 0), Vector3(2.0, 0.35, 2.0), Color("#8e5eac"))
+		_capsule_box(Vector3(x, 0.45, 0), Vector3(1.75, 0.28, 1.75), Color("#f4ce72"))
+		_capsule_box(Vector3(x, 0.68, 0), Vector3(1.4, 0.2, 1.4), Color("#6d4d9f"))
+		var egg := MeshInstance3D.new()
+		var mesh := SphereMesh.new()
+		mesh.radius = 0.7
+		mesh.height = 1.85
+		egg.mesh = mesh
+		egg.position = Vector3(x, 1.7, 0)
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = [Color("#bc85ff"), Color("#77d8f5"), Color("#ffbd73")][i]
+		mat.metallic = 0.16
+		mat.roughness = 0.25
+		egg.material_override = mat
+		capsule_world.add_child(egg)
+		_capsule_box(Vector3(x - 0.17, 2.12, 0.55), Vector3(0.18, 0.42, 0.07), Color("#fff4ff"))
+
+func _capsule_box(pos: Vector3, size: Vector3, color: Color) -> void:
+	_add_box(capsule_world, pos, size, color)
+
+func set_capsule_scene(enabled: bool) -> void:
+	if capsule_world == null:
+		return
+	capsule_world.visible = enabled
+	hero.visible = not enabled
+	for part in arena_parts:
+		if is_instance_valid(part):
+			part.visible = not enabled
 
 func _add_box(parent: Node, pos: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	var mesh := BoxMesh.new()

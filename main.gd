@@ -150,30 +150,46 @@ func _build_capsule_world() -> void:
 	capsule_world = Node3D.new()
 	capsule_world.visible = false
 	add_child(capsule_world)
-	_capsule_box(Vector3(0, -0.42, 0), Vector3(11.5, 0.65, 11.5), Color("#75d5ed"))
-	_capsule_box(Vector3(0, -0.07, 0), Vector3(8.5, 0.12, 7.8), Color("#e4d8ff"))
-	for x in [-4.4, 4.4]:
-		for z in [-4.0, 4.0]:
-			_capsule_box(Vector3(x, 0.8, z), Vector3(0.65, 2.0, 0.65), Color("#8d69d8"))
-			_capsule_box(Vector3(x, 1.8, z), Vector3(1.05, 0.25, 1.05), Color("#ffe2a1"))
-	for i in range(3):
-		var x := float(i - 1) * 2.7
-		_capsule_box(Vector3(x, 0.15, 0), Vector3(2.0, 0.35, 2.0), Color("#8e5eac"))
-		_capsule_box(Vector3(x, 0.45, 0), Vector3(1.75, 0.28, 1.75), Color("#f4ce72"))
-		_capsule_box(Vector3(x, 0.68, 0), Vector3(1.4, 0.2, 1.4), Color("#6d4d9f"))
+	_capsule_box(Vector3(0, -0.42, -4), Vector3(10.5, 0.65, 20), Color("#8ddff0"))
+	_capsule_box(Vector3(0, -0.06, -4), Vector3(8.8, 0.12, 19), Color("#e7dcff"))
+	for i in range(8):
+		var x := -1.85 if i % 2 == 0 else 1.85
+		var z := 1.0 - float(i / 2) * 3.15
+		_capsule_box(Vector3(x, 0.18, z), Vector3(2.55, 0.36, 2.55), Color("#8b5cb0"))
+		_capsule_box(Vector3(x, 0.48, z), Vector3(2.25, 0.28, 2.25), Color("#f5d47c"))
+		_capsule_box(Vector3(x, 0.70, z), Vector3(1.95, 0.20, 1.95), Color("#7654a5"))
 		var egg := MeshInstance3D.new()
 		var mesh := SphereMesh.new()
-		mesh.radius = 0.7
-		mesh.height = 1.85
+		mesh.radius = 0.78
+		mesh.height = 1.95
 		egg.mesh = mesh
-		egg.position = Vector3(x, 1.7, 0)
+		egg.position = Vector3(x, 1.78, z)
 		var mat := StandardMaterial3D.new()
-		mat.albedo_color = [Color("#bc85ff"), Color("#77d8f5"), Color("#ffbd73")][i]
-		mat.metallic = 0.16
-		mat.roughness = 0.25
+		mat.albedo_color = [Color("#bc85ff"), Color("#77d8f5"), Color("#ffbd73"), Color("#a0f0b6"), Color("#ffb5d8"), Color("#ffa88b"), Color("#a7aaff"), Color("#ffe38b")][i]
+		mat.metallic = 0.1
+		mat.roughness = 0.24
 		egg.material_override = mat
 		capsule_world.add_child(egg)
-		_capsule_box(Vector3(x - 0.17, 2.12, 0.55), Vector3(0.18, 0.42, 0.07), Color("#fff4ff"))
+		_capsule_box(Vector3(x - 0.20, 2.18, z + 0.58), Vector3(0.16, 0.42, 0.08), Color("#fff8ff"))
+
+func scroll_capsules(amount: float) -> void:
+	if capsule_world:
+		capsule_world.position.z = clampf(capsule_world.position.z + amount, 0.0, 9.45)
+
+func capsule_at_screen(screen_pos: Vector2) -> int:
+	if not capsule_world or not capsule_world.visible:
+		return -1
+	var nearest := -1
+	var distance := 115.0
+	for i in range(8):
+		var x := -1.85 if i % 2 == 0 else 1.85
+		var z := 1.0 - float(i / 2) * 3.15 + capsule_world.position.z
+		var projected := camera.unproject_position(Vector3(x, 1.78, z))
+		var d := projected.distance_to(screen_pos)
+		if d < distance:
+			distance = d
+			nearest = i
+	return nearest
 
 func _capsule_box(pos: Vector3, size: Vector3, color: Color) -> void:
 	_add_box(capsule_world, pos, size, color)

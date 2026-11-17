@@ -1,0 +1,57 @@
+name: Build Clicker Mania (WolfCraft Rust)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clicker-mania-wolfcraft-rust-apk
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev pkg-config
+          cargo install cargo-apk --locked
+      - name: Build Android APK
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
+        run: |
+          cargo apk build --release --lib --target aarch64-linux-android
+          mkdir -p build
+          find target -name '*.apk' -print
+          APK="$(find target -name '*.apk' -type f | head -1)"
+          test -n "$APK"
+          cp "$APK" build/clicker-mania.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clicker-mania-apk
+          path: build/clicker-mania.apk
+          if-no-files-found: error
+      - name: Publish APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view wolfcraft-apk >/dev/null 2>&1; then
+            gh release upload latest-apk build/clicker-mania.apk --clobber
+            gh release edit latest-apk --notes "WolfCraft Rust build: $GITHUB_SHA"
+          else
+            gh release create latest-apk build/clicker-mania.apk --title "Clicker Mania — WolfCraft Engine" --notes "WolfCraft Rust build: $GITHUB_SHA" --latest
+          fi

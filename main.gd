@@ -80,6 +80,7 @@ func _spawn_enemy() -> void:
 	for child in hero.get_children():
 		child.queue_free()
 	model_parts.clear()
+	hero.scale = Vector3.ONE
 	mob_kind = (enemy_level - 1) % 10
 	var skin := Color("#ddb08c")
 	var hair := Color("#342216")
@@ -280,8 +281,10 @@ func _process(delta: float) -> void:
 			projectiles.erase(projectile)
 	for particle in debris.duplicate():
 		particle["life"] -= delta
-		particle["vel"].y -= 13.0 * delta
-		particle["node"].position += particle["vel"] * delta
+		var velocity: Vector3 = particle["vel"]
+		velocity.y -= 13.0 * delta
+		particle["vel"] = velocity
+		particle["node"].position += velocity * delta
 		if particle["life"] <= 0.0:
 			particle["node"].queue_free()
 			debris.erase(particle)

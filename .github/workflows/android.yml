@@ -42,6 +42,7 @@ jobs:
           GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
+          printf "%s" "$GITHUB_SHA" > build_sha.txt
           cp "$HOME/.android/debug.keystore" ./debug.keystore
           godot --headless --editor --path . --quit
           mkdir -p "$HOME/.config/godot"
@@ -67,6 +68,7 @@ jobs:
         run: |
           if gh release view latest-apk >/dev/null 2>&1; then
             gh release upload latest-apk build/clicker-mania-debug.apk --clobber
+            gh release edit latest-apk --notes "Build: $GITHUB_SHA"
           else
-            gh release create latest-apk build/clicker-mania-debug.apk --title "Clicker Mania - Android APK" --notes "Latest Android debug APK, portrait mode." --latest
+            gh release create latest-apk build/clicker-mania-debug.apk --title "Clicker Mania - Android APK" --notes "Build: $GITHUB_SHA" --latest
           fi

@@ -39,14 +39,14 @@ fn ui(ctx: &egui::Context, game: &mut game::Game) {
         ui.vertical_centered(|ui| {
             ui.label(RichText::new("CLICKER MANIA").size(29.0).strong().color(gold));
             ui.label(RichText::new(format!("МОНЕТЫ: {}", game.coins.floor() as u64)).size(27.0).strong().color(Color32::WHITE));
-            ui.label(RichText::new(format!("МНОЖИТЕЛЬ  x{}", game.multiplier)).size(23.0).strong().color(gold));
-            ui.label(RichText::new(format!("+{:.0} монет/сек", game.coins_per_second())).size(17.0).color(Color32::LIGHT_GREEN));
+            ui.label(RichText::new(format!("ВРАГ Lv.{}  HP {}/{}", game.enemy_level, game.enemy_hp, game.enemy_max_hp)).size(23.0).strong().color(gold));
+            ui.label(RichText::new(format!("ГЕРОЙ Lv.{}  КОМБО x{}", game.hero_level, 1 + game.combo / 10)).size(17.0).color(Color32::LIGHT_GREEN));
         });
     });
     egui::TopBottomPanel::bottom("dock").frame(egui::Frame::none().fill(blue).inner_margin(egui::Margin::same(9.0))).show(ctx, |ui| {
         ui.columns(4, |cols| {
             for (i, (label, tab)) in [
-                ("ИГРА", game::Tab::Home),
+                ("БОЙ", game::Tab::Home),
                 ("КАПСУЛЫ", game::Tab::Capsules),
                 ("УЛУЧШ.", game::Tab::Upgrades),
                 ("НАСТР.", game::Tab::Settings),

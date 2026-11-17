@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -58,3 +61,12 @@ jobs:
           name: clicker-mania-debug-apk
           path: build/clicker-mania-debug.apk
           if-no-files-found: error
+      - name: Publish direct APK download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view latest-apk >/dev/null 2>&1; then
+            gh release upload latest-apk build/clicker-mania-debug.apk --clobber
+          else
+            gh release create latest-apk build/clicker-mania-debug.apk --title "Clicker Mania - Android APK" --notes "Latest Android debug APK, portrait mode." --latest
+          fi

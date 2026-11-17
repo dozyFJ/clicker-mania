@@ -307,6 +307,10 @@ func _float_text(pos: Vector2, value: String) -> void:
 	floaters.append({"node": label, "age": 0.0})
 
 func _process(delta: float) -> void:
+	if update_request != null and update_progress != null:
+		var total := update_request.get_body_size()
+		if total > 0:
+			update_progress.value = clampf(100.0 * float(update_request.get_downloaded_bytes()) / float(total), 0.0, 99.0)
 	for projectile in projectiles.duplicate():
 		projectile["age"] += delta
 		var progress: float = minf(1.0, projectile["age"] / 0.23)
@@ -394,5 +398,50 @@ func _show_update_dialog() -> void:
 	dialog.ok_button_text = "СКАЧАТЬ"
 	dialog.cancel_button_text = "ПОЗЖЕ"
 	add_child(dialog)
-	dialog.confirmed.connect(func() -> void: OS.shell_open(APK_URL))
+	dialog.confirmed.connect(_download_update)
 	dialog.popup_centered()
+
+var update_request: HTTPRequest
+var update_dialog: AcceptDialog
+var update_progress: ProgressBar
+
+func _download_update() -> void:
+	if update_request != null:
+		return
+	update_dialog = AcceptDialog.new()
+	update_dialog.title = "ЗАГРУЗКА ОБНОВЛЕНИЯ"
+	update_dialog.dialog_text = "Скачиваем новую версию APK..."
+	update_dialog.ok_button_text = "В ФОНЕ"
+	add_child(update_dialog)
+	update_progress = ProgressBar.new()
+	update_progress.custom_minimum_size = Vector2(400, 28)
+	update_progress.max_value = 100
+	update_progress.show_percentage = true
+	update_dialog.add_child(update_progress)
+	update_dialog.popup_centered(Vector2i(540, 220))
+	update_request = HTTPRequest.new()
+	update_request.download_file = "user://clicker-mania-update.apk"
+	add_child(update_request)
+	update_request.request_completed.connect(_on_update_downloaded)
+	var err := update_request.request(APK_URL, ["User-Agent: ClickerMania"])
+	if err != OK:
+		_finish_update_download(false)
+
+func _on_update_downloaded(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+	_finish_update_download(result == HTTPRequest.RESULT_SUCCESS and code == 200)
+
+func _finish_update_download(success: bool) -> void:
+	if update_request != null:
+		update_request.queue_free()
+		update_request = null
+	if update_dialog == null:
+		return
+	if success:
+		update_progress.value = 100
+		update_dialog.dialog_text = "APK загружен. Для установки Android потребуется подтверждение. Откройте страницу загрузки и установите обновление, затем перезапустите игру."
+		update_dialog.ok_button_text = "ОТКРЫТЬ УСТАНОВКУ"
+		update_dialog.confirmed.connect(func() -> void: OS.shell_open(APK_URL), CONNECT_ONE_SHOT)
+	else:
+		update_dialog.dialog_text = "Не удалось скачать обновление. Проверьте интернет и повторите попытку."
+		update_dialog.ok_button_text = "ЗАКРЫТЬ"
+

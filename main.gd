@@ -27,11 +27,26 @@ var debris: Array = []
 var random := RandomNumberGenerator.new()
 
 func _ready() -> void:
+	var splash := preload("res://splash.gd").new()
+	add_child(splash)
+	await get_tree().process_frame
+	splash.set_progress(20, "ЗАГРУЗКА СОХРАНЕНИЯ")
 	random.randomize()
 	_load_game()
+	await get_tree().process_frame
+	splash.set_progress(55, "СОЗДАНИЕ МИРА")
 	_setup_world()
+	await get_tree().process_frame
+	splash.set_progress(85, "ПОДГОТОВКА ИГРЫ")
 	_setup_ui()
 	_update_labels()
+	await get_tree().process_frame
+	splash.set_progress(100, "ГОТОВО!")
+	await get_tree().create_timer(0.4).timeout
+	var fade := create_tween()
+	fade.tween_property(splash, "modulate:a", 0.0, 0.35)
+	await fade.finished
+	splash.queue_free()
 
 func _setup_world() -> void:
 	var world := WorldEnvironment.new()

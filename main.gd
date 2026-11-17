@@ -297,6 +297,9 @@ func _setup_ui() -> void:
 	hint_label.add_theme_font_size_override("font_size", 28)
 	root.add_child(hint_label)
 	_build_bottom_menu(root)
+	var pages := preload("res://pages.gd").new()
+	root.add_child(pages)
+	pages.setup(self)
 
 
 var player_xp: int = 0

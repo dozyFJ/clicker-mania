@@ -173,15 +173,22 @@ func _spawn_enemy() -> void:
 			_part(Vector3(0, 1.92, 0), Vector3(1.65, 0.35, 1.0), hair)
 	else:
 		for x in [-0.36, 0.36]:
-			_part(Vector3(x, 0.44, 0), Vector3(0.55, 0.85, 0.58), pants)
-		_part(Vector3(0, 1.38, 0), Vector3(1.32, 1.22, 0.74), jacket)
+			_part(Vector3(x, 0.48, 0), Vector3(0.54, 0.95, 0.58), pants)
+			_part(Vector3(x, 0.12, 0.17), Vector3(0.56, 0.22, 0.78), Color("#202635"))
+		_part(Vector3(0, 1.42, 0), Vector3(1.3, 1.2, 0.72), jacket)
+		_part(Vector3(0, 1.42, 0.38), Vector3(0.22, 0.86, 0.045), jacket.lightened(0.22))
+		_part(Vector3(0, 1.93, 0), Vector3(0.34, 0.2, 0.3), skin)
 		for x in [-0.92, 0.92]:
-			_part(Vector3(x, 1.35, 0), Vector3(0.46, 1.12, 0.62), jacket)
+			_part(Vector3(x, 1.4, 0), Vector3(0.45, 0.8, 0.6), jacket)
+			_part(Vector3(x, 0.92, 0), Vector3(0.43, 0.35, 0.55), skin)
 		_part(Vector3(0, 2.36, 0), Vector3(1.1, 1.02, 0.88), skin)
-		_part(Vector3(0, 2.93, 0), Vector3(1.2, 0.23, 0.95), hair)
+		_part(Vector3(0, 2.93, 0), Vector3(1.19, 0.24, 0.95), hair)
+		_part(Vector3(-0.52, 2.65, 0), Vector3(0.13, 0.52, 0.89), hair)
+		_part(Vector3(0.52, 2.65, 0), Vector3(0.13, 0.52, 0.89), hair)
+		_part(Vector3(0, 2.83, 0.47), Vector3(0.9, 0.18, 0.12), hair)
 		for x in [-0.25, 0.25]:
 			_part(Vector3(x, 2.46, 0.48), Vector3(0.13, 0.13, 0.08), eyes)
-		_part(Vector3(0, 2.1, 0.48), Vector3(0.32, 0.12, 0.1), hair)
+		_part(Vector3(0, 2.12, 0.48), Vector3(0.3, 0.09, 0.1), Color("#6b3537"))
 		if mob_kind == 1:
 			hero.scale = Vector3(1.0, 0.73, 1.1)
 		else:

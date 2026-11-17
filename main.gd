@@ -78,14 +78,14 @@ func _setup_world() -> void:
 
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = 8.8
-	camera.position = Vector3(0, 2.0, 9.0)
+	camera.size = 10.0
+	camera.position = Vector3(0, 11.5, 8.0)
 	add_child(camera)
-	camera.look_at(Vector3(0, 1.45, 0), Vector3.UP)
+	camera.look_at(Vector3(0, 0.8, 0), Vector3.UP)
 	camera.current = true
 
-	_add_box(self, Vector3(0, -0.3, 0), Vector3(10, 0.5, 10), Color("#30455c"))
-	_add_box(self, Vector3(0, -0.04, 0), Vector3(3.8, 0.12, 3.0), Color("#546f88"))
+	_add_box(self, Vector3(0, -0.3, 0), Vector3(12, 0.5, 12), Color("#30455c"))
+	_add_box(self, Vector3(0, -0.04, 0), Vector3(5.0, 0.12, 5.0), Color("#546f88"))
 	hero = Node3D.new()
 	add_child(hero)
 	_spawn_enemy()

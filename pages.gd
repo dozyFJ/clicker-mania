@@ -5,6 +5,8 @@ var page: PanelContainer
 var heading: Label
 var body: VBoxContainer
 var egg_button: Button
+var egg_image: TextureRect
+var egg_atlas: AtlasTexture
 var feedback: Label
 var egg_price := 100
 var inventory: Array = []
@@ -20,11 +22,11 @@ func setup(main_game: Node3D) -> void:
 	var top := HBoxContainer.new()
 	top.anchor_left = 0.05
 	top.anchor_right = 0.95
-	top.anchor_top = 0.012
-	top.anchor_bottom = 0.09
+	top.anchor_top = 0.025
+	top.anchor_bottom = 0.105
 	top.add_theme_constant_override("separation", 12)
 	add_child(top)
-	for entry in [["⌂", 0], ["🥚 ЯЙЦА", 1], ["🐾 ПЕТЫ", 2]]:
+	for entry in [["ДОМ", 0], ["ЯЙЦА", 1], ["ПЕТЫ", 2]]:
 		var btn := Button.new()
 		btn.text = str(entry[0])
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -34,44 +36,62 @@ func setup(main_game: Node3D) -> void:
 		btn.pressed.connect(show_page.bind(int(entry[1])))
 		top.add_child(btn)
 	page = PanelContainer.new()
-	page.anchor_left = 0.055
-	page.anchor_right = 0.945
-	page.anchor_top = 0.16
-	page.anchor_bottom = 0.85
+	page.anchor_left = 0.025
+	page.anchor_right = 0.975
+	page.anchor_top = 0.145
+	page.anchor_bottom = 0.94
 	page.add_theme_stylebox_override("panel", _cartoon_style(0))
 	add_child(page)
 	body = VBoxContainer.new()
-	body.alignment = BoxContainer.ALIGNMENT_CENTER
-	body.add_theme_constant_override("separation", 22)
+	body.alignment = BoxContainer.ALIGNMENT_BEGIN
+	body.add_theme_constant_override("separation", 24)
 	page.add_child(body)
 	heading = Label.new()
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 39)
+	heading.add_theme_font_size_override("font_size", 32)
+	heading.custom_minimum_size.y = 100
 	heading.add_theme_color_override("font_color", Color("#ffe49d"))
 	body.add_child(heading)
 	feedback = Label.new()
 	feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	feedback.add_theme_font_size_override("font_size", 25)
+	feedback.add_theme_font_size_override("font_size", 22)
+	feedback.custom_minimum_size.y = 75
 	feedback.add_theme_color_override("font_color", Color.WHITE)
 	body.add_child(feedback)
 	var egg_view := CenterContainer.new()
-	egg_view.custom_minimum_size = Vector2(0, 280)
+	egg_view.custom_minimum_size = Vector2(0, 370)
 	body.add_child(egg_view)
 	egg_button = Button.new()
-	egg_button.text = "🥚"
-	egg_button.custom_minimum_size = Vector2(260, 260)
+	egg_button.text = ""
+	egg_button.custom_minimum_size = Vector2(290, 340)
 	egg_button.add_theme_font_size_override("font_size", 110)
-	egg_button.add_theme_stylebox_override("normal", _cartoon_style(2, 38))
+	egg_button.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	egg_button.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	egg_button.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	egg_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	egg_button.pressed.connect(_buy_egg)
 	egg_view.add_child(egg_button)
+	egg_image = TextureRect.new()
+	egg_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	egg_image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	egg_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	egg_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	egg_atlas = AtlasTexture.new()
+	egg_atlas.atlas = load("res://egg_pet_atlas.svg")
+	egg_atlas.region = Rect2(0, 0, 256, 256)
+	egg_image.texture = egg_atlas
+	egg_button.add_child(egg_image)
 	var action := Button.new()
 	action.name = "Action"
 	action.text = "КУПИТЬ ЯЙЦО"
-	action.custom_minimum_size = Vector2(0, 85)
+	action.custom_minimum_size = Vector2(0, 95)
 	action.add_theme_font_size_override("font_size", 29)
 	action.add_theme_stylebox_override("normal", _cartoon_style(4, 25))
 	action.pressed.connect(_buy_egg)
 	body.add_child(action)
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(spacer)
 	_load_inventory()
 	show_page(0)
 
@@ -163,8 +183,8 @@ func _hatch() -> void:
 	egg_button.rotation = 0.0
 	var index := randi_range(0, pet_names.size() - 1)
 	current_pet = pet_names[index]
-	egg_button.text = "🐾"
-	egg_button.modulate = pet_colors[index]
+	egg_atlas.region = Rect2(256, 0, 256, 256)
+	egg_image.modulate = pet_colors[index]
 	feedback.text = "ВЫЛУПИЛСЯ: " + current_pet
 	var dialog := AcceptDialog.new()
 	dialog.title = "НОВЫЙ ПИТОМЕЦ!"
@@ -174,8 +194,8 @@ func _hatch() -> void:
 	dialog.confirmed.connect(func() -> void:
 		inventory.append(current_pet)
 		_save_inventory()
-		egg_button.text = "🥚"
-		egg_button.modulate = Color.WHITE
+		egg_atlas.region = Rect2(0, 0, 256, 256)
+		egg_image.modulate = Color.WHITE
 		egg_button.disabled = false
 		hatching = false
 		feedback.text = "ПИТОМЕЦ В ИНВЕНТАРЕ!"

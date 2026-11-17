@@ -84,11 +84,56 @@ func _setup_world() -> void:
 	camera.look_at(Vector3(0, 0.8, 0), Vector3.UP)
 	camera.current = true
 
-	_add_box(self, Vector3(0, -0.3, 0), Vector3(12, 0.5, 12), Color("#30455c"))
-	_add_box(self, Vector3(0, -0.04, 0), Vector3(5.0, 0.12, 5.0), Color("#546f88"))
+	_build_arena()
 	hero = Node3D.new()
 	add_child(hero)
 	_spawn_enemy()
+
+func _atlas_box(pos: Vector3, size: Vector3, tile: int, tint: Color = Color.WHITE) -> void:
+	var part := _add_box(self, pos, size, tint)
+	var mat := ShaderMaterial.new()
+	var shader := Shader.new()
+	shader.code = "shader_type spatial; render_mode diffuse_burley, cull_back; uniform sampler2D atlas_tex : source_color, filter_nearest; uniform vec4 tile_rect; uniform vec4 tint_color : source_color; void fragment() { vec2 uv = tile_rect.xy + fract(UV) * tile_rect.zw; ALBEDO = texture(atlas_tex, uv).rgb * tint_color.rgb; ROUGHNESS = 0.95; }"
+	mat.shader = shader
+	mat.set_shader_parameter("atlas_tex", load("res://arena_atlas.svg"))
+	mat.set_shader_parameter("tile_rect", Vector4(float(tile % 4) / 4.0, float(tile / 4) / 2.0, 0.25, 0.5))
+	mat.set_shader_parameter("tint_color", Vector4(tint.r, tint.g, tint.b, 1.0))
+	part.material_override = mat
+
+func _build_arena() -> void:
+	# Layered ground and paved center, visible from the isometric camera.
+	_atlas_box(Vector3(0, -0.37, 0), Vector3(11.5, 0.5, 11.5), 0)
+	_atlas_box(Vector3(0, -0.09, 0), Vector3(5.3, 0.1, 5.3), 1)
+	for i in range(-2, 3):
+		_atlas_box(Vector3(float(i) * 1.02, -0.025, -2.68), Vector3(0.95, 0.06, 0.38), 2)
+		_atlas_box(Vector3(float(i) * 1.02, -0.025, 2.68), Vector3(0.95, 0.06, 0.38), 2)
+		_atlas_box(Vector3(-2.68, -0.025, float(i) * 1.02), Vector3(0.38, 0.06, 0.95), 2)
+		_atlas_box(Vector3(2.68, -0.025, float(i) * 1.02), Vector3(0.38, 0.06, 0.95), 2)
+	# Four corner towers, with battlements.
+	for x in [-3.8, 3.8]:
+		for z in [-3.8, 3.8]:
+			_atlas_box(Vector3(x, 0.55, z), Vector3(1.0, 1.65, 1.0), 2)
+			_atlas_box(Vector3(x, 1.48, z), Vector3(1.32, 0.26, 1.32), 3)
+			for dx in [-0.48, 0.48]:
+				for dz in [-0.48, 0.48]:
+					_atlas_box(Vector3(x + dx, 1.78, z + dz), Vector3(0.25, 0.42, 0.25), 2)
+	# Low boundary walls and entrances.
+	for z in [-4.65, 4.65]:
+		for x in [-2.5, -1.5, 1.5, 2.5]:
+			_atlas_box(Vector3(x, 0.23, z), Vector3(0.96, 0.85, 0.4), 2)
+	for x in [-4.65, 4.65]:
+		for z in [-2.5, -1.5, 1.5, 2.5]:
+			_atlas_box(Vector3(x, 0.23, z), Vector3(0.4, 0.85, 0.96), 2)
+	# Trees, shrubs and crates frame the arena without blocking the enemy.
+	for p in [Vector3(-4.8, 0, -2.8), Vector3(4.8, 0, 2.6), Vector3(-4.8, 0, 2.2), Vector3(4.8, 0, -2.5)]:
+		_atlas_box(p + Vector3(0, 0.55, 0), Vector3(0.34, 1.65, 0.34), 6)
+		_atlas_box(p + Vector3(0, 1.58, 0), Vector3(1.55, 1.35, 1.55), 4)
+		_atlas_box(p + Vector3(0, 2.23, 0), Vector3(1.05, 0.55, 1.05), 7)
+	for p in [Vector3(-3.2, 0, -1.5), Vector3(3.3, 0, 1.7), Vector3(-3.3, 0, 2.5), Vector3(3.2, 0, -2.1)]:
+		_atlas_box(p + Vector3(0, 0.15, 0), Vector3(0.9, 0.65, 0.9), 4)
+	for p in [Vector3(-3.25, 0, 0.5), Vector3(3.3, 0, -0.5)]:
+		_atlas_box(p + Vector3(0, 0.28, 0), Vector3(0.75, 0.85, 0.75), 6)
+		_atlas_box(p + Vector3(0, 0.74, 0), Vector3(0.82, 0.12, 0.82), 3)
 
 func _add_box(parent: Node, pos: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	var mesh := BoxMesh.new()

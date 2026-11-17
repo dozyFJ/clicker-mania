@@ -19,29 +19,40 @@ func setup(main_game: Node3D) -> void:
 	game = main_game
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var top := HBoxContainer.new()
-	top.anchor_left = 0.05
-	top.anchor_right = 0.95
-	top.anchor_top = 0.025
-	top.anchor_bottom = 0.105
-	top.add_theme_constant_override("separation", 12)
-	add_child(top)
-	for entry in [["ДОМ", 0], ["ЯЙЦА", 1], ["ПЕТЫ", 2]]:
+	var dock_back := PanelContainer.new()
+	dock_back.anchor_left = 0.015
+	dock_back.anchor_right = 0.985
+	dock_back.anchor_top = 1.0
+	dock_back.anchor_bottom = 1.0
+	dock_back.offset_top = -112
+	dock_back.offset_bottom = -8
+	dock_back.add_theme_stylebox_override("panel", _cartoon_style(0, 28))
+	add_child(dock_back)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 7)
+	dock_back.add_child(tabs)
+	for entry in [["ИГРА", 0], ["КАПСУЛЫ", 1], ["УЛУЧШ.", 2], ["НАСТР.", 3]]:
 		var btn := Button.new()
 		btn.text = str(entry[0])
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.add_theme_font_size_override("font_size", 24)
-		btn.add_theme_stylebox_override("normal", _cartoon_style(1))
-		btn.add_theme_stylebox_override("pressed", _cartoon_style(5))
+		btn.custom_minimum_size.y = 78
+		btn.add_theme_font_size_override("font_size", 19)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+		btn.add_theme_stylebox_override("normal", _cartoon_style(1 if int(entry[1]) == 0 else 2, 25))
+		btn.add_theme_stylebox_override("pressed", _cartoon_style(5, 25))
+		btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		btn.pressed.connect(show_page.bind(int(entry[1])))
-		top.add_child(btn)
+		tabs.add_child(btn)
 	page = PanelContainer.new()
 	page.anchor_left = 0.025
 	page.anchor_right = 0.975
-	page.anchor_top = 0.145
-	page.anchor_bottom = 0.94
+	page.anchor_top = 0.08
+	page.anchor_bottom = 1.0
+	page.offset_bottom = -128
 	page.add_theme_stylebox_override("panel", _cartoon_style(0))
+	page.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(page)
+	move_child(page, 0)
 	body = VBoxContainer.new()
 	body.alignment = BoxContainer.ALIGNMENT_BEGIN
 	body.add_theme_constant_override("separation", 24)
@@ -131,7 +142,7 @@ func show_page(tab: int) -> void:
 	game.hp_label.visible = home
 	game.hint_label.visible = home
 	game.menu_panel.visible = home
-	mouse_filter = Control.MOUSE_FILTER_IGNORE if home else Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_IGNORE if home else Control.MOUSE_FILTER_PASS
 	if home:
 		return
 	egg_button.visible = tab == 1
@@ -139,15 +150,12 @@ func show_page(tab: int) -> void:
 	if tab == 1:
 		heading.text = "КАПСУЛЫ ПИТОМЦЕВ"
 		feedback.text = "100 МОНЕТ • НАЖМИ НА ЯЙЦО"
+	elif tab == 2:
+		heading.text = "УЛУЧШЕНИЯ"
+		feedback.text = "УРОН: " + str(game.damage) + "\nМОHЕТЫ: " + str(game.coins) + "\nПИТОМЦЫ: " + str(inventory.size())
 	else:
-		heading.text = "МОИ ПИТОМЦЫ"
-		feedback.text = "ПОЛУЧЕНО: " + str(inventory.size())
-		var labels := ""
-		for pet in inventory:
-			labels += "🐾 " + str(pet) + "    "
-		if inventory.is_empty():
-			labels = "ПОКА НЕТ ПИТОМЦЕВ"
-		feedback.text += "\n" + labels
+		heading.text = "НАСТРОЙКИ"
+		feedback.text = "CLICKER MANIA\nЗВУК И ГРАФИКА\nСКОРО"
 
 func _buy_egg() -> void:
 	if hatching:

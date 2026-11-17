@@ -2,6 +2,7 @@ extends Control
 
 var game: Node3D
 var page: PanelContainer
+var capsule_hud: Control
 var heading: Label
 var body: VBoxContainer
 var egg_button: Button
@@ -103,6 +104,28 @@ func setup(main_game: Node3D) -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)
+	capsule_hud = Control.new()
+	capsule_hud.anchor_left = 0.05
+	capsule_hud.anchor_right = 0.95
+	capsule_hud.anchor_top = 0.68
+	capsule_hud.anchor_bottom = 1.0
+	capsule_hud.offset_bottom = -128
+	add_child(capsule_hud)
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grid.add_theme_constant_override("h_separation", 9)
+	capsule_hud.add_child(grid)
+	for i in range(3):
+		var tile := Button.new()
+		tile.text = ["МАГИЯ\\n100 МОНЕТ", "ЛЁД\\n100 МОНЕТ", "ОГОНЬ\\n100 МОНЕТ"][i].replace("\\n", "\n")
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tile.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		tile.add_theme_font_size_override("font_size", 21)
+		tile.add_theme_stylebox_override("normal", _cartoon_style(2 if i == 0 else 1, 24))
+		tile.add_theme_stylebox_override("pressed", _cartoon_style(5, 24))
+		tile.pressed.connect(_buy_egg)
+		grid.add_child(tile)
 	_load_inventory()
 	show_page(0)
 
@@ -136,7 +159,9 @@ func _style(bg: Color, border: Color, radius: int) -> StyleBoxFlat:
 
 func show_page(tab: int) -> void:
 	var home := tab == 0
-	page.visible = not home
+	page.visible = tab == 2 or tab == 3
+	capsule_hud.visible = tab == 1
+	game.set_capsule_scene(tab == 1)
 	game.score_label.visible = home
 	game.combo_label.visible = home
 	game.hp_label.visible = home
@@ -145,8 +170,8 @@ func show_page(tab: int) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE if home else Control.MOUSE_FILTER_PASS
 	if home:
 		return
-	egg_button.visible = tab == 1
-	body.get_node("Action").visible = tab == 1
+	egg_button.visible = false
+	body.get_node("Action").visible = false
 	if tab == 1:
 		heading.text = "КАПСУЛЫ ПИТОМЦЕВ"
 		feedback.text = "100 МОНЕТ • НАЖМИ НА ЯЙЦО"

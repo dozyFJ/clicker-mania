@@ -344,8 +344,8 @@ func _build_bottom_menu(root: Control) -> void:
 	menu_panel.anchor_right = 0.96
 	menu_panel.anchor_top = 1.0
 	menu_panel.anchor_bottom = 1.0
-	menu_panel.offset_top = -174
-	menu_panel.offset_bottom = -20
+	menu_panel.offset_top = -274
+	menu_panel.offset_bottom = -120
 	menu_panel.add_theme_stylebox_override("panel", _ui_atlas_style(0, 28))
 	root.add_child(menu_panel)
 	var row := HBoxContainer.new()

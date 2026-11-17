@@ -125,7 +125,7 @@ impl ApplicationHandler for App {
                 for (id, delta) in &output.textures_delta.set {
                     g.renderer.update_texture(&g.gpu.device, &g.gpu.queue, *id, delta);
                 }
-                let Ok(frame) = g.gpu.surface.get_current_texture() else { g.gpu.resize(size.width, size.height); return; };
+                let Ok(frame) = g.gpu.surface.as_ref().expect("active surface").get_current_texture() else { g.gpu.resize(size.width, size.height); return; };
                 let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
                 let mut encoder = g.gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("button-sim") });
                 g.renderer.update_buffers(&g.gpu.device, &g.gpu.queue, &mut encoder, &shapes, &descriptor);

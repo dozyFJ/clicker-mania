@@ -40,10 +40,23 @@ jobs:
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           cp "$HOME/.android/debug.keystore" ./debug.keystore
-          mkdir -p "$HOME/.config/godot"
-          printf '[gd_resource type="EditorSettings" format=3]\\n\\n[resource]\\nexport/android/android_sdk_path = "%s"\\nexport/android/java_sdk_path = "%s"\\nexport/android/debug_keystore = "%s"\\nexport/android/debug_keystore_user = "androiddebugkey"\\nexport/android/debug_keystore_pass = "android"\\n' "$ANDROID_HOME" "$JAVA_HOME" "$PWD/debug.keystore" > "$HOME/.config/godot/editor_settings-4.tres"
-          cat "$HOME/.config/godot/editor_settings-4.tres"
           godot --headless --editor --path . --quit
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path.home() / ".config/godot/editor_settings-4.tres"
+          raw = p.read_text()
+          settings = (
+              'export/android/android_sdk_path = "' + os.environ["ANDROID_HOME"] + '"\n'
+              'export/android/java_sdk_path = "' + os.environ["JAVA_HOME"] + '"\n'
+              'export/android/debug_keystore = "' + os.getcwd() + '/debug.keystore"\n'
+              'export/android/debug_keystore_user = "androiddebugkey"\n'
+              'export/android/debug_keystore_pass = "android"\n'
+          )
+          if '[resource]' not in raw:
+              raise RuntimeError("Godot did not generate editor settings")
+          p.write_text(raw.replace('[resource]', '[resource]\n' + settings, 1))
+          PY
           godot --headless --path . --export-debug Android build/clicker-mania-debug.apk
       - uses: actions/upload-artifact@v4
         with:

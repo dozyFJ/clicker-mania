@@ -1,6 +1,8 @@
 extends Node3D
 
 const SAVE_PATH := "user://save.json"
+const RELEASE_API := "https://api.github.com/repos/dozyFJ/clicker-mania/releases/tags/latest-apk"
+const APK_URL := "https://github.com/dozyFJ/clicker-mania/releases/download/latest-apk/clicker-mania-debug.apk"
 var coins: int = 0
 var combo: int = 0
 var last_tap: float = -100.0
@@ -44,9 +46,10 @@ func _ready() -> void:
 	splash.set_progress(100, "ГОТОВО!")
 	await get_tree().create_timer(0.4).timeout
 	var fade := create_tween()
-	fade.tween_property(splash, "modulate:a", 0.0, 0.35)
+	fade.tween_property(splash.get_child(0), "modulate:a", 0.0, 0.35)
 	await fade.finished
 	splash.queue_free()
+	_check_updates()
 
 func _setup_world() -> void:
 	var world := WorldEnvironment.new()
@@ -359,3 +362,30 @@ func _load_game() -> void:
 		enemy_level = maxi(1, int(parsed.get("enemy_level", 1)))
 		enemy_max_hp = 100 + (enemy_level - 1) * 45
 		enemy_hp = clampi(int(parsed.get("enemy_hp", enemy_max_hp)), 1, enemy_max_hp)
+
+func _check_updates() -> void:
+	var request := HTTPRequest.new()
+	add_child(request)
+	request.request_completed.connect(func(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+		if response_code == 200:
+			var release = JSON.parse_string(body.get_string_from_utf8())
+			if release is Dictionary:
+				var published_sha := str(release.get("body", ""))
+				var installed_sha := ""
+				if FileAccess.file_exists("res://build_sha.txt"):
+					installed_sha = FileAccess.get_file_as_string("res://build_sha.txt").strip_edges()
+				if installed_sha != "" and not published_sha.contains(installed_sha):
+					_show_update_dialog()
+		request.queue_free()
+	)
+	request.request(RELEASE_API, ["User-Agent: ClickerMania"])
+
+func _show_update_dialog() -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "ОБНОВЛЕНИЕ CLICKER MANIA"
+	dialog.dialog_text = "Доступна новая версия игры! Скачать APK?"
+	dialog.ok_button_text = "СКАЧАТЬ"
+	dialog.cancel_button_text = "ПОЗЖЕ"
+	add_child(dialog)
+	dialog.confirmed.connect(func() -> void: OS.shell_open(APK_URL))
+	dialog.popup_centered()

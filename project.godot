@@ -2,6 +2,8 @@ config_version=5
 
 [application]
 config/name="Clicker Mania"
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0.055, 0.075, 0.14, 1)
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/description="Voxel 3D Android clicker prototype"

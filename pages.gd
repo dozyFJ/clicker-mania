@@ -29,8 +29,8 @@ func setup(main_game: Node3D) -> void:
 		btn.text = str(entry[0])
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.add_theme_font_size_override("font_size", 24)
-		btn.add_theme_stylebox_override("normal", _style(Color("#274a7b"), Color("#ffda79"), 26))
-		btn.add_theme_stylebox_override("pressed", _style(Color("#156aa3"), Color("#ffffff"), 26))
+		btn.add_theme_stylebox_override("normal", _cartoon_style(1))
+		btn.add_theme_stylebox_override("pressed", _cartoon_style(5))
 		btn.pressed.connect(show_page.bind(int(entry[1])))
 		top.add_child(btn)
 	page = PanelContainer.new()
@@ -38,7 +38,7 @@ func setup(main_game: Node3D) -> void:
 	page.anchor_right = 0.945
 	page.anchor_top = 0.16
 	page.anchor_bottom = 0.85
-	page.add_theme_stylebox_override("panel", _style(Color("#192744"), Color("#e3bf70"), 32))
+	page.add_theme_stylebox_override("panel", _cartoon_style(0))
 	add_child(page)
 	body = VBoxContainer.new()
 	body.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -61,7 +61,7 @@ func setup(main_game: Node3D) -> void:
 	egg_button.text = "🥚"
 	egg_button.custom_minimum_size = Vector2(260, 260)
 	egg_button.add_theme_font_size_override("font_size", 110)
-	egg_button.add_theme_stylebox_override("normal", _style(Color("#4b7bc1"), Color("#c5edff"), 90))
+	egg_button.add_theme_stylebox_override("normal", _cartoon_style(2, 38))
 	egg_button.pressed.connect(_buy_egg)
 	egg_view.add_child(egg_button)
 	var action := Button.new()
@@ -69,11 +69,27 @@ func setup(main_game: Node3D) -> void:
 	action.text = "КУПИТЬ ЯЙЦО"
 	action.custom_minimum_size = Vector2(0, 85)
 	action.add_theme_font_size_override("font_size", 29)
-	action.add_theme_stylebox_override("normal", _style(Color("#3aaf69"), Color("#d7ff9b"), 24))
+	action.add_theme_stylebox_override("normal", _cartoon_style(4, 25))
 	action.pressed.connect(_buy_egg)
 	body.add_child(action)
 	_load_inventory()
 	show_page(0)
+
+func _cartoon_style(tile: int, margin: float = 30.0) -> StyleBoxTexture:
+	var atlas := AtlasTexture.new()
+	atlas.atlas = load("res://ui_atlas.svg")
+	atlas.region = Rect2((tile % 3) * 256, int(tile / 3) * 256, 256, 256)
+	var style := StyleBoxTexture.new()
+	style.texture = atlas
+	style.texture_margin_left = margin
+	style.texture_margin_right = margin
+	style.texture_margin_top = margin
+	style.texture_margin_bottom = margin
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	return style
 
 func _style(bg: Color, border: Color, radius: int) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

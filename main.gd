@@ -388,7 +388,7 @@ func _build_bottom_menu(root: Control) -> void:
 	click_button.add_theme_stylebox_override("hover", _ui_atlas_style(1, 30))
 	click_button.add_theme_stylebox_override("pressed", _ui_atlas_style(5, 30))
 	click_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	click_button.pressed.connect(func() -> void: _tap(get_viewport().get_visible_rect().size * 0.5))
+	click_button.pressed.connect(func() -> void: _tap(click_button.get_global_rect().get_center()))
 	row.add_child(click_button)
 	var pets_button := Button.new()
 	pets_button.text = "🐾\nПИТОМЦЫ"
@@ -448,17 +448,24 @@ func _tap(pos: Vector2) -> void:
 	last_tap = now
 	var multiplier := mini(10, 1 + combo / 5)
 	spawn_serial += 1
-	# Cursor projectile is rendered as a small 3D voxel pointer.
-	var pointer := Node3D.new()
-	add_child(pointer)
-	var start_x := clampf((pos.x / get_viewport().get_visible_rect().size.x - 0.5) * 5.0, -2.5, 2.5)
-	var start_y := clampf((1.0 - pos.y / get_viewport().get_visible_rect().size.y) * 3.0, 0.5, 3.5)
-	pointer.position = Vector3(start_x, start_y, 4.0)
-	var white := Color("#fff7dc")
-	_add_box(pointer, Vector3(0, 0, 0), Vector3(0.18, 0.42, 0.12), white)
-	_add_box(pointer, Vector3(0.16, -0.18, 0), Vector3(0.32, 0.14, 0.12), white)
-	_add_box(pointer, Vector3(0.28, -0.32, 0), Vector3(0.12, 0.2, 0.12), Color("#ffcb4a"))
-	projectiles.append({"node": pointer, "age": 0.0, "damage": damage * multiplier, "screen": pos})
+	# Launch a crisp 2D cursor from the actual CLICK button position.
+	var pointer := TextureRect.new()
+	var atlas := AtlasTexture.new()
+	atlas.atlas = load("res://cursor_atlas.svg")
+	atlas.region = Rect2(0, 0, 256, 256)
+	pointer.texture = atlas
+	pointer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pointer.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pointer.custom_minimum_size = Vector2(100, 100)
+	pointer.size = Vector2(100, 100)
+	pointer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var layer := CanvasLayer.new()
+	layer.layer = 12
+	add_child(layer)
+	layer.add_child(pointer)
+	pointer.position = pos - Vector2(50, 50)
+	var target := camera.unproject_position(hero.global_position + Vector3(0, 1.5, 0))
+	projectiles.append({"node": pointer, "layer": layer, "start": pointer.position, "target": target - Vector2(50, 50), "age": 0.0, "damage": damage * multiplier, "screen": target})
 	_update_labels()
 
 func _hit_enemy(amount: int, pos: Vector2) -> void:
@@ -496,11 +503,13 @@ func _process(delta: float) -> void:
 	for projectile in projectiles.duplicate():
 		projectile["age"] += delta
 		var progress: float = minf(1.0, projectile["age"] / 0.23)
-		projectile["node"].position = projectile["node"].position.lerp(Vector3(0, 1.65, 0.75), minf(1.0, delta * 18.0))
-		projectile["node"].rotation.z += delta * 9.0
+		var t: float = 1.0 - pow(1.0 - progress, 3.0)
+		projectile["node"].position = projectile["start"].lerp(projectile["target"], t)
+		projectile["node"].rotation = sin(progress * PI) * 0.18
+		projectile["node"].scale = Vector2.ONE * (1.0 + 0.35 * sin(progress * PI))
 		if progress >= 1.0:
 			_hit_enemy(projectile["damage"], projectile["screen"])
-			projectile["node"].queue_free()
+			projectile["layer"].queue_free()
 			projectiles.erase(projectile)
 	for particle in debris.duplicate():
 		particle["life"] -= delta

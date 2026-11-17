@@ -34,7 +34,7 @@ jobs:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
         run: |
-          cargo apk build --release --lib --target aarch64-linux-android
+          cargo apk build --lib --target aarch64-linux-android
           mkdir -p build
           find target -name '*.apk' -print
           APK="$(find target -name '*.apk' -type f | head -1)"

@@ -12,6 +12,8 @@ var coins: int = 0
 var combo: int = 0
 var last_tap: float = -100.0
 var capsule_world: Node3D
+var capsule_eggs: Array[MeshInstance3D] = []
+var hatch_pet: Node3D
 var arena_parts: Array[Node3D] = []
 var hero: Node3D
 var camera: Camera3D
@@ -170,7 +172,51 @@ func _build_capsule_world() -> void:
 		mat.roughness = 0.24
 		egg.material_override = mat
 		capsule_world.add_child(egg)
+		capsule_eggs.append(egg)
 		_capsule_box(Vector3(x - 0.20, 2.18, z + 0.58), Vector3(0.16, 0.42, 0.08), Color("#fff8ff"))
+
+func hatch_capsule_3d(index: int, pet_color: Color) -> void:
+	if index < 0 or index >= capsule_eggs.size():
+		return
+	var egg := capsule_eggs[index]
+	var original_position := egg.position
+	for i in range(10):
+		var tween := create_tween()
+		tween.tween_property(egg, "rotation_degrees:z", 16.0 if i % 2 == 0 else -16.0, 0.08)
+		await tween.finished
+	egg.rotation_degrees.z = 0.0
+	var burst := create_tween()
+	burst.tween_property(egg, "scale", Vector3(1.3, 1.3, 1.3), 0.18)
+	burst.tween_property(egg, "scale", Vector3.ZERO, 0.20)
+	await burst.finished
+	egg.visible = false
+	if is_instance_valid(hatch_pet):
+		hatch_pet.queue_free()
+	hatch_pet = Node3D.new()
+	capsule_world.add_child(hatch_pet)
+	hatch_pet.position = original_position + Vector3(0, 0.35, 0)
+	# Original blocky simulator pet: ears, face, paws and tail in 3D.
+	_add_box(hatch_pet, Vector3(0, 0, 0), Vector3(1.1, 0.88, 0.85), pet_color)
+	_add_box(hatch_pet, Vector3(-0.34, 0.58, 0), Vector3(0.27, 0.52, 0.28), pet_color.lightened(0.16))
+	_add_box(hatch_pet, Vector3(0.34, 0.58, 0), Vector3(0.27, 0.52, 0.28), pet_color.lightened(0.16))
+	_add_box(hatch_pet, Vector3(-0.26, 0.12, 0.45), Vector3(0.18, 0.21, 0.10), Color("#20263f"))
+	_add_box(hatch_pet, Vector3(0.26, 0.12, 0.45), Vector3(0.18, 0.21, 0.10), Color("#20263f"))
+	_add_box(hatch_pet, Vector3(0, -0.13, 0.48), Vector3(0.17, 0.12, 0.12), Color("#f6b5c9"))
+	_add_box(hatch_pet, Vector3(-0.34, -0.49, 0.25), Vector3(0.28, 0.27, 0.34), pet_color.darkened(0.16))
+	_add_box(hatch_pet, Vector3(0.34, -0.49, 0.25), Vector3(0.28, 0.27, 0.34), pet_color.darkened(0.16))
+	_add_box(hatch_pet, Vector3(0.43, -0.10, -0.54), Vector3(0.27, 0.26, 0.55), pet_color)
+	hatch_pet.scale = Vector3.ZERO
+	var appear := create_tween()
+	appear.tween_property(hatch_pet, "scale", Vector3(1.2, 1.2, 1.2), 0.24).set_trans(Tween.TRANS_BACK)
+	appear.tween_property(hatch_pet, "scale", Vector3.ONE, 0.16)
+	await appear.finished
+
+func finish_capsule_hatch(index: int) -> void:
+	if is_instance_valid(hatch_pet):
+		hatch_pet.queue_free()
+	if index >= 0 and index < capsule_eggs.size():
+		capsule_eggs[index].visible = true
+		capsule_eggs[index].scale = Vector3.ONE
 
 func scroll_capsules(amount: float) -> void:
 	if capsule_world:

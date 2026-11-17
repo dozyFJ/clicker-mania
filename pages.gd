@@ -3,6 +3,9 @@ extends Control
 var game: Node3D
 var page: PanelContainer
 var capsule_hud: Control
+var tab_buttons: Array[Button] = []
+var selected_capsule: int = 0
+var capsule_prices := [100, 150, 200, 300, 450, 600, 800, 1000]
 var heading: Label
 var body: VBoxContainer
 var egg_button: Button
@@ -44,6 +47,7 @@ func setup(main_game: Node3D) -> void:
 		btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		btn.pressed.connect(show_page.bind(int(entry[1])))
 		tabs.add_child(btn)
+		tab_buttons.append(btn)
 	page = PanelContainer.new()
 	page.anchor_left = 0.025
 	page.anchor_right = 0.975
@@ -105,27 +109,72 @@ func setup(main_game: Node3D) -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)
 	capsule_hud = Control.new()
-	capsule_hud.anchor_left = 0.05
-	capsule_hud.anchor_right = 0.95
-	capsule_hud.anchor_top = 0.68
+	capsule_hud.anchor_left = 0.035
+	capsule_hud.anchor_right = 0.965
+	capsule_hud.anchor_top = 0.15
 	capsule_hud.anchor_bottom = 1.0
-	capsule_hud.offset_bottom = -128
+	capsule_hud.offset_bottom = -126
 	add_child(capsule_hud)
+	var title := Label.new()
+	title.text = "КАПСУЛЫ"
+	title.anchor_right = 1.0
+	title.offset_bottom = 62
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color("#ffe8a3"))
+	capsule_hud.add_child(title)
+	var scroll := ScrollContainer.new()
+	scroll.anchor_left = 0.0
+	scroll.anchor_right = 1.0
+	scroll.anchor_top = 0.0
+	scroll.anchor_bottom = 1.0
+	scroll.offset_top = 72
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	capsule_hud.add_child(scroll)
 	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	grid.add_theme_constant_override("h_separation", 9)
-	capsule_hud.add_child(grid)
-	for i in range(3):
+	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 18)
+	scroll.add_child(grid)
+	for i in range(capsule_prices.size()):
 		var tile := Button.new()
-		tile.text = ["МАГИЯ", "ЛЁД", "ОГОНЬ"][i] + " 100"
+		tile.text = ""
+		tile.custom_minimum_size = Vector2(0, 285)
 		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tile.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		tile.add_theme_font_size_override("font_size", 21)
-		tile.add_theme_stylebox_override("normal", _cartoon_style(2 if i == 0 else 1, 24))
-		tile.add_theme_stylebox_override("pressed", _cartoon_style(5, 24))
-		tile.pressed.connect(_buy_egg)
+		tile.add_theme_stylebox_override("normal", _cartoon_style(0, 28))
+		tile.add_theme_stylebox_override("hover", _cartoon_style(0, 28))
+		tile.add_theme_stylebox_override("pressed", _cartoon_style(2, 28))
+		tile.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		tile.pressed.connect(_select_capsule.bind(i))
 		grid.add_child(tile)
+		var egg := TextureRect.new()
+		egg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		egg.anchor_left = 0.10
+		egg.anchor_right = 0.90
+		egg.anchor_top = 0.04
+		egg.anchor_bottom = 0.76
+		egg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		egg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var atlas := AtlasTexture.new()
+		atlas.atlas = load("res://egg_pet_atlas.svg")
+		atlas.region = Rect2(0, 0, 256, 256)
+		egg.texture = atlas
+		egg.modulate = [Color("#e2b4ff"), Color("#9eeeff"), Color("#ffe19b"), Color("#a4ffc5"), Color("#ffb3d3"), Color("#ffbc8e"), Color("#b4baff"), Color("#f8e38e")][i]
+		tile.add_child(egg)
+		var price := Label.new()
+		price.text = str(capsule_prices[i]) + " МОНЕТ"
+		price.anchor_left = 0
+		price.anchor_right = 1
+		price.anchor_top = 0.78
+		price.anchor_bottom = 0.98
+		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		price.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		price.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		price.add_theme_font_size_override("font_size", 21)
+		price.add_theme_color_override("font_color", Color("#fff0ac"))
+		tile.add_child(price)
 	_load_inventory()
 	show_page(0)
 
@@ -160,8 +209,10 @@ func _style(bg: Color, border: Color, radius: int) -> StyleBoxFlat:
 func show_page(tab: int) -> void:
 	var home := tab == 0
 	page.visible = tab == 2 or tab == 3
+	for i in range(tab_buttons.size()):
+		tab_buttons[i].add_theme_stylebox_override("normal", _cartoon_style(5 if i == tab else 1, 25))
 	capsule_hud.visible = tab == 1
-	game.set_capsule_scene(tab == 1)
+	game.set_capsule_scene(false)
 	game.score_label.visible = home
 	game.combo_label.visible = home
 	game.hp_label.visible = home
@@ -182,15 +233,25 @@ func show_page(tab: int) -> void:
 		heading.text = "НАСТРОЙКИ"
 		feedback.text = "CLICKER MANIA\nЗВУК И ГРАФИКА\nСКОРО"
 
+func _select_capsule(index: int) -> void:
+	selected_capsule = index
+	egg_price = capsule_prices[index]
+	_buy_egg()
+
 func _buy_egg() -> void:
 	if hatching:
 		return
 	if game.coins < egg_price:
-		feedback.text = "НЕДОСТАТОЧНО МОНЕТ!"
+		var notice := AcceptDialog.new()
+		notice.title = "НЕДОСТАТОЧНО МОНЕТ"
+		notice.dialog_text = "Нужно " + str(egg_price) + " монет."
+		add_child(notice)
+		notice.confirmed.connect(notice.queue_free)
+		notice.popup_centered()
 		return
 	var dialog := ConfirmationDialog.new()
 	dialog.title = "КАПСУЛА ПИТОМЦА"
-	dialog.dialog_text = "Купить яйцо за 100 монет?"
+	dialog.dialog_text = "Купить капсулу за " + str(egg_price) + " монет?"
 	dialog.ok_button_text = "ДА, КУПИТЬ"
 	dialog.cancel_button_text = "НЕТ"
 	add_child(dialog)

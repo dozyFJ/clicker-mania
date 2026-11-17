@@ -277,31 +277,19 @@ func _buy_egg() -> void:
 
 func _hatch() -> void:
 	hatching = true
-	feedback.text = "ЯЙЦО ТРЯСЁТСЯ..."
-	egg_button.disabled = true
-	for i in range(8):
-		var tween := create_tween()
-		tween.tween_property(egg_button, "rotation", 0.16 if i % 2 == 0 else -0.16, 0.09)
-		await tween.finished
-	egg_button.rotation = 0.0
 	var index := randi_range(0, pet_names.size() - 1)
 	current_pet = pet_names[index]
-	egg_atlas.region = Rect2(256, 0, 256, 256)
-	egg_image.modulate = pet_colors[index]
-	feedback.text = "ВЫЛУПИЛСЯ: " + current_pet
+	await game.hatch_capsule_3d(selected_capsule, pet_colors[index])
 	var dialog := AcceptDialog.new()
-	dialog.title = "НОВЫЙ ПИТОМЕЦ!"
+	dialog.title = "НОВЫЙ 3D-ПИТОМЕЦ!"
 	dialog.dialog_text = current_pet + "\nДобавить в инвентарь?"
 	dialog.ok_button_text = "ПРИНЯТЬ"
 	add_child(dialog)
 	dialog.confirmed.connect(func() -> void:
 		inventory.append(current_pet)
 		_save_inventory()
-		egg_atlas.region = Rect2(0, 0, 256, 256)
-		egg_image.modulate = Color.WHITE
-		egg_button.disabled = false
+		game.finish_capsule_hatch(selected_capsule)
 		hatching = false
-		feedback.text = "ПИТОМЕЦ В ИНВЕНТАРЕ!"
 		dialog.queue_free()
 	)
 	dialog.popup_centered()

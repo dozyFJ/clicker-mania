@@ -1,6 +1,11 @@
 extends Node3D
 
 const SAVE_PATH := "user://save.json"
+const LIVE_CONTENT_URL := "https://raw.githubusercontent.com/dozyFJ/clicker-mania/main/live_content.json"
+const LIVE_CACHE_PATH := "user://live_content.json"
+var coins_multiplier: int = 1
+var xp_per_win: int = 25
+var live_version: int = 0
 const RELEASE_API := "https://api.github.com/repos/dozyFJ/clicker-mania/releases/tags/latest-apk"
 const APK_URL := "https://github.com/dozyFJ/clicker-mania/releases/download/latest-apk/clicker-mania-debug.apk"
 var coins: int = 0
@@ -35,6 +40,7 @@ func _ready() -> void:
 	splash.set_progress(20, "ЗАГРУЗКА СОХРАНЕНИЯ")
 	random.randomize()
 	_load_game()
+	_load_cached_content()
 	await get_tree().process_frame
 	splash.set_progress(55, "СОЗДАНИЕ МИРА")
 	_setup_world()
@@ -49,6 +55,7 @@ func _ready() -> void:
 	fade.tween_property(splash.get_child(0), "modulate:a", 0.0, 0.35)
 	await fade.finished
 	splash.queue_free()
+	_check_live_content()
 	_check_updates()
 
 func _setup_world() -> void:
@@ -449,8 +456,8 @@ func _hit_enemy(amount: int, pos: Vector2) -> void:
 	hit_flash = 0.16
 	_float_text(pos, "-" + str(amount) + " HP")
 	if enemy_hp <= 0:
-		coins += 10 * enemy_level
-		player_xp += 25
+		coins += 10 * enemy_level * coins_multiplier
+		player_xp += xp_per_win
 		_update_player_level()
 		_float_text(Vector2(get_viewport().get_visible_rect().size.x * 0.5, 350), "+ " + str(10 * enemy_level) + " coins")
 		enemy_level += 1
@@ -610,3 +617,35 @@ func _finish_update_download(success: bool) -> void:
 		update_dialog.dialog_text = "Не удалось скачать обновление. Проверьте интернет и повторите попытку."
 		update_dialog.ok_button_text = "ЗАКРЫТЬ"
 
+
+func _load_cached_content() -> void:
+	if FileAccess.file_exists(LIVE_CACHE_PATH):
+		var cached = JSON.parse_string(FileAccess.get_file_as_string(LIVE_CACHE_PATH))
+		if cached is Dictionary:
+			_apply_live_content(cached)
+
+func _check_live_content() -> void:
+	var request := HTTPRequest.new()
+	add_child(request)
+	request.timeout = 12.0
+	request.request_completed.connect(func(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+		if result == HTTPRequest.RESULT_SUCCESS and code == 200:
+			var payload = JSON.parse_string(body.get_string_from_utf8())
+			if payload is Dictionary and int(payload.get("content_version", 0)) >= live_version:
+				_apply_live_content(payload)
+				var cache := FileAccess.open(LIVE_CACHE_PATH, FileAccess.WRITE)
+				if cache:
+					cache.store_string(JSON.stringify(payload))
+		request.queue_free()
+	)
+	var err := request.request(LIVE_CONTENT_URL, ["User-Agent: ClickerMania"])
+	if err != OK:
+		request.queue_free()
+
+func _apply_live_content(payload: Dictionary) -> void:
+	live_version = maxi(live_version, int(payload.get("content_version", 0)))
+	damage = clampi(int(payload.get("damage", damage)), 1, 100000)
+	coins_multiplier = clampi(int(payload.get("coins_multiplier", coins_multiplier)), 1, 1000)
+	xp_per_win = clampi(int(payload.get("xp_per_win", xp_per_win)), 1, 10000)
+	if score_label != null:
+		_update_labels()

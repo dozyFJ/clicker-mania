@@ -281,14 +281,110 @@ func _setup_ui() -> void:
 	root.add_child(hp_label)
 
 	hint_label = Label.new()
-	hint_label.anchor_top = 0.85
-	hint_label.anchor_bottom = 0.95
+	hint_label.anchor_top = 0.75
+	hint_label.anchor_bottom = 0.82
 	hint_label.anchor_right = 1.0
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint_label.text = "ТАПАЙ: КУРСОР АТАКУЕТ!"
 	hint_label.add_theme_font_size_override("font_size", 28)
 	root.add_child(hint_label)
+	_build_bottom_menu(root)
+
+
+var player_xp: int = 0
+var player_level: int = 1
+var menu_panel: PanelContainer
+var menu_info: Label
+var level_progress: ProgressBar
+var level_text: Label
+
+func _rounded_style(bg: Color, border: Color, radius: int = 20) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = border
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(radius)
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 9
+	style.content_margin_bottom = 9
+	return style
+
+func _build_bottom_menu(root: Control) -> void:
+	menu_panel = PanelContainer.new()
+	menu_panel.anchor_top = 1.0
+	menu_panel.anchor_bottom = 1.0
+	menu_panel.anchor_right = 1.0
+	menu_panel.offset_top = -245
+	menu_panel.offset_bottom = 0
+	menu_panel.add_theme_stylebox_override("panel", _rounded_style(Color("#17243d"), Color("#354c73"), 18))
+	root.add_child(menu_panel)
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 9)
+	menu_panel.add_child(layout)
+	var header := HBoxContainer.new()
+	layout.add_child(header)
+	level_text = Label.new()
+	level_text.text = "⭐ УРОВЕНЬ 1"
+	level_text.add_theme_font_size_override("font_size", 24)
+	level_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(level_text)
+	var coins_title := Label.new()
+	coins_title.text = "CLICKER MANIA"
+	coins_title.add_theme_font_size_override("font_size", 20)
+	coins_title.add_theme_color_override("font_color", Color("#61e0ff"))
+	header.add_child(coins_title)
+	level_progress = ProgressBar.new()
+	level_progress.custom_minimum_size = Vector2(0, 22)
+	level_progress.max_value = 100
+	level_progress.show_percentage = false
+	var xp_fill := StyleBoxFlat.new()
+	xp_fill.bg_color = Color("#59dc73")
+	xp_fill.set_corner_radius_all(10)
+	level_progress.add_theme_stylebox_override("fill", xp_fill)
+	level_progress.add_theme_stylebox_override("background", _rounded_style(Color("#0b1429"), Color("#415b7b"), 10))
+	layout.add_child(level_progress)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 9)
+	layout.add_child(tabs)
+	var names := ["⚡ КЛИК", "🐾 ПЕТЫ", "🃏 КАРТЫ", "🎒 СУМКА"]
+	for i in range(names.size()):
+		var button := Button.new()
+		button.text = names[i]
+		button.custom_minimum_size = Vector2(0, 78)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 19)
+		button.add_theme_stylebox_override("normal", _rounded_style(Color("#2c4166"), Color("#526b94"), 17))
+		button.add_theme_stylebox_override("hover", _rounded_style(Color("#395987"), Color("#65d8ff"), 17))
+		button.add_theme_stylebox_override("pressed", _rounded_style(Color("#197da0"), Color("#6beaff"), 17))
+		button.pressed.connect(_open_menu.bind(i))
+		tabs.add_child(button)
+	menu_info = Label.new()
+	menu_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_info.add_theme_font_size_override("font_size", 20)
+	menu_info.add_theme_color_override("font_color", Color("#c4d8f4"))
+	layout.add_child(menu_info)
+	_open_menu(0)
+	_update_player_level()
+
+func _open_menu(tab: int) -> void:
+	match tab:
+		0:
+			menu_info.text = "⚡ ТАПАЙ ПО АРЕНЕ И ПОБЕЖДАЙ!"
+		1:
+			menu_info.text = "🐾 ПЕТЫ — СКОРО"
+		2:
+			menu_info.text = "🃏 КАРТЫ — СКОРО"
+		3:
+			menu_info.text = "🎒 ИНВЕНТАРЬ — СКОРО"
+
+func _update_player_level() -> void:
+	if level_progress == null:
+		return
+	player_level = 1 + int(player_xp / 100)
+	level_text.text = "⭐ УРОВЕНЬ " + str(player_level)
+	level_progress.value = player_xp % 100
 
 func _unhandled_input(event: InputEvent) -> void:
 	var pos := Vector2.ZERO
@@ -333,6 +429,8 @@ func _hit_enemy(amount: int, pos: Vector2) -> void:
 	_float_text(pos, "-" + str(amount) + " HP")
 	if enemy_hp <= 0:
 		coins += 10 * enemy_level
+		player_xp += 25
+		_update_player_level()
 		_float_text(Vector2(get_viewport().get_visible_rect().size.x * 0.5, 350), "+ " + str(10 * enemy_level) + " coins")
 		enemy_level += 1
 		enemy_max_hp = 100 + (enemy_level - 1) * 45
@@ -404,7 +502,7 @@ func _update_labels() -> void:
 func _save_game() -> void:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
-		file.store_string(JSON.stringify({"coins": coins, "enemy_level": enemy_level, "enemy_hp": enemy_hp}))
+		file.store_string(JSON.stringify({"coins": coins, "enemy_level": enemy_level, "enemy_hp": enemy_hp, "player_xp": player_xp}))
 
 func _load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
@@ -415,6 +513,7 @@ func _load_game() -> void:
 	var parsed = JSON.parse_string(file.get_as_text())
 	if parsed is Dictionary:
 		coins = maxi(0, int(parsed.get("coins", 0)))
+		player_xp = maxi(0, int(parsed.get("player_xp", 0)))
 		enemy_level = maxi(1, int(parsed.get("enemy_level", 1)))
 		enemy_max_hp = 100 + (enemy_level - 1) * 45
 		enemy_hp = clampi(int(parsed.get("enemy_hp", enemy_max_hp)), 1, enemy_max_hp)

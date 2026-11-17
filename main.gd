@@ -12,6 +12,13 @@ var hint_label: Label
 var animation_time: float = 0.0
 var bounce: float = 0.0
 var floaters: Array = []
+var projectiles: Array = []
+var enemy_hp: int = 100
+var enemy_max_hp: int = 100
+var enemy_level: int = 1
+var damage: int = 5
+var hp_label: Label
+var spawn_serial: int = 0
 var random := RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -112,13 +119,21 @@ func _setup_ui() -> void:
 	combo_label.add_theme_font_size_override("font_size", 36)
 	root.add_child(combo_label)
 
+	hp_label = Label.new()
+	hp_label.anchor_right = 1.0
+	hp_label.offset_top = 235
+	hp_label.offset_bottom = 305
+	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hp_label.add_theme_font_size_override("font_size", 31)
+	root.add_child(hp_label)
+
 	hint_label = Label.new()
 	hint_label.anchor_top = 0.85
 	hint_label.anchor_bottom = 0.95
 	hint_label.anchor_right = 1.0
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hint_label.text = "ТАПАЙ ПО СТАРИКУ!"
+	hint_label.text = "ТАПАЙ: КУРСОР АТАКУЕТ!"
 	hint_label.add_theme_font_size_override("font_size", 28)
 	root.add_child(hint_label)
 
@@ -131,26 +146,45 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton:
 		if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
 			return
+		# Android generates a mouse event from a touch; avoid double attacks.
+		if OS.has_feature("mobile"):
+			return
 		pos = event.position
 	else:
 		return
-	var from := camera.project_ray_origin(pos)
-	var to := from + camera.project_ray_normal(pos) * 100.0
-	var query := PhysicsRayQueryParameters3D.create(from, to)
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty() and hero.is_ancestor_of(hit.collider):
-		_tap(pos)
+	_tap(pos)
 
 func _tap(pos: Vector2) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 	combo = combo + 1 if now - last_tap < 0.8 else 1
 	last_tap = now
 	var multiplier := mini(10, 1 + combo / 5)
-	coins += multiplier
-	bounce = 0.22
+	spawn_serial += 1
+	# Cursor projectile is rendered as a small 3D voxel pointer.
+	var pointer := Node3D.new()
+	add_child(pointer)
+	var start_x := clampf((pos.x / get_viewport().get_visible_rect().size.x - 0.5) * 5.0, -2.5, 2.5)
+	var start_y := clampf((1.0 - pos.y / get_viewport().get_visible_rect().size.y) * 3.0, 0.5, 3.5)
+	pointer.position = Vector3(start_x, start_y, 4.0)
+	var white := Color("#fff7dc")
+	_add_box(pointer, Vector3(0, 0, 0), Vector3(0.18, 0.42, 0.12), white)
+	_add_box(pointer, Vector3(0.16, -0.18, 0), Vector3(0.32, 0.14, 0.12), white)
+	_add_box(pointer, Vector3(0.28, -0.32, 0), Vector3(0.12, 0.2, 0.12), Color("#ffcb4a"))
+	projectiles.append({"node": pointer, "age": 0.0, "damage": damage * multiplier, "screen": pos})
 	_update_labels()
-	_float_text(pos, "+" + str(multiplier))
-	_save_game()
+
+func _hit_enemy(amount: int, pos: Vector2) -> void:
+	enemy_hp -= amount
+	bounce = 0.24
+	_float_text(pos, "-" + str(amount) + " HP")
+	if enemy_hp <= 0:
+		coins += 10 * enemy_level
+		_float_text(Vector2(get_viewport().get_visible_rect().size.x * 0.5, 350), "+ " + str(10 * enemy_level) + " coins")
+		enemy_level += 1
+		enemy_max_hp = 100 + (enemy_level - 1) * 45
+		enemy_hp = enemy_max_hp
+		_save_game()
+	_update_labels()
 
 func _float_text(pos: Vector2, value: String) -> void:
 	var label := Label.new()
@@ -162,6 +196,15 @@ func _float_text(pos: Vector2, value: String) -> void:
 	floaters.append({"node": label, "age": 0.0})
 
 func _process(delta: float) -> void:
+	for projectile in projectiles.duplicate():
+		projectile["age"] += delta
+		var progress: float = minf(1.0, projectile["age"] / 0.23)
+		projectile["node"].position = projectile["node"].position.lerp(Vector3(0, 1.65, 0.75), minf(1.0, delta * 18.0))
+		projectile["node"].rotation.z += delta * 9.0
+		if progress >= 1.0:
+			_hit_enemy(projectile["damage"], projectile["screen"])
+			projectile["node"].queue_free()
+			projectiles.erase(projectile)
 	animation_time += delta
 	bounce = maxf(0.0, bounce - delta * 1.7)
 	hero.position.y = sin(animation_time * 1.8) * 0.05 + bounce
@@ -181,11 +224,13 @@ func _update_labels() -> void:
 	score_label.text = "🪙 " + str(coins)
 	var multiplier := mini(10, 1 + combo / 5)
 	combo_label.text = "КОМБО x" + str(multiplier) + "  (" + str(combo) + ")"
+	if hp_label:
+		hp_label.text = "МОБ " + str(enemy_level) + " | HP " + str(enemy_hp) + "/" + str(enemy_max_hp) + " | DMG " + str(damage * multiplier)
 
 func _save_game() -> void:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
-		file.store_string(JSON.stringify({"coins": coins}))
+		file.store_string(JSON.stringify({"coins": coins, "enemy_level": enemy_level, "enemy_hp": enemy_hp}))
 
 func _load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
@@ -196,3 +241,6 @@ func _load_game() -> void:
 	var parsed = JSON.parse_string(file.get_as_text())
 	if parsed is Dictionary:
 		coins = maxi(0, int(parsed.get("coins", 0)))
+		enemy_level = maxi(1, int(parsed.get("enemy_level", 1)))
+		enemy_max_hp = 100 + (enemy_level - 1) * 45
+		enemy_hp = clampi(int(parsed.get("enemy_hp", enemy_max_hp)), 1, enemy_max_hp)

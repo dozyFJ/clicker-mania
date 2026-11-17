@@ -193,7 +193,7 @@ func show_page(tab: int) -> void:
 	game.combo_label.visible = home
 	game.hp_label.visible = home
 	game.hint_label.visible = home
-	game.menu_panel.visible = home
+	game.menu_panel.visible = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE if home else Control.MOUSE_FILTER_PASS
 	if home:
 		return

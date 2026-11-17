@@ -311,6 +311,22 @@ func _rounded_style(bg: Color, border: Color, radius: int = 20) -> StyleBoxFlat:
 	style.content_margin_bottom = 9
 	return style
 
+func _ui_atlas_style(tile: int, margin: float = 34.0) -> StyleBoxTexture:
+	var atlas := AtlasTexture.new()
+	atlas.atlas = load("res://ui_atlas.svg")
+	atlas.region = Rect2((tile % 3) * 256, int(tile / 3) * 256, 256, 256)
+	var style := StyleBoxTexture.new()
+	style.texture = atlas
+	style.texture_margin_left = margin
+	style.texture_margin_right = margin
+	style.texture_margin_top = margin
+	style.texture_margin_bottom = margin
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 12
+	style.content_margin_bottom = 12
+	return style
+
 func _build_bottom_menu(root: Control) -> void:
 	menu_panel = PanelContainer.new()
 	menu_panel.anchor_top = 1.0
@@ -318,7 +334,7 @@ func _build_bottom_menu(root: Control) -> void:
 	menu_panel.anchor_right = 1.0
 	menu_panel.offset_top = -190
 	menu_panel.offset_bottom = 0
-	menu_panel.add_theme_stylebox_override("panel", _rounded_style(Color("#17243d"), Color("#354c73"), 18))
+	menu_panel.add_theme_stylebox_override("panel", _ui_atlas_style(0))
 	root.add_child(menu_panel)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -340,15 +356,15 @@ func _build_bottom_menu(root: Control) -> void:
 	var xp_fill := StyleBoxFlat.new()
 	xp_fill.bg_color = Color("#59dc73")
 	xp_fill.set_corner_radius_all(10)
-	level_progress.add_theme_stylebox_override("fill", xp_fill)
-	level_progress.add_theme_stylebox_override("background", _rounded_style(Color("#0b1429"), Color("#415b7b"), 10))
+	level_progress.add_theme_stylebox_override("fill", _ui_atlas_style(4, 22))
+	level_progress.add_theme_stylebox_override("background", _ui_atlas_style(3, 22))
 	xp_column.add_child(level_progress)
 	var click_button := Button.new()
 	click_button.text = "⚡\nКЛИК"
 	click_button.custom_minimum_size = Vector2(145, 145)
 	click_button.add_theme_font_size_override("font_size", 28)
-	click_button.add_theme_stylebox_override("normal", _rounded_style(Color("#2284b3"), Color("#7ae8ff"), 22))
-	click_button.add_theme_stylebox_override("pressed", _rounded_style(Color("#116186"), Color("#d4faff"), 22))
+	click_button.add_theme_stylebox_override("normal", _ui_atlas_style(1))
+	click_button.add_theme_stylebox_override("pressed", _ui_atlas_style(5))
 	click_button.pressed.connect(func() -> void: _tap(get_viewport().get_visible_rect().size * 0.5))
 	row.add_child(click_button)
 	var pets_button := Button.new()
@@ -356,8 +372,8 @@ func _build_bottom_menu(root: Control) -> void:
 	pets_button.custom_minimum_size = Vector2(180, 84)
 	pets_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pets_button.add_theme_font_size_override("font_size", 21)
-	pets_button.add_theme_stylebox_override("normal", _rounded_style(Color("#55418b"), Color("#bba6ff"), 42))
-	pets_button.add_theme_stylebox_override("pressed", _rounded_style(Color("#37265f"), Color("#d9cfff"), 42))
+	pets_button.add_theme_stylebox_override("normal", _ui_atlas_style(2, 68))
+	pets_button.add_theme_stylebox_override("pressed", _ui_atlas_style(0, 68))
 	pets_button.pressed.connect(_open_menu.bind(1))
 	row.add_child(pets_button)
 	menu_info = Label.new()

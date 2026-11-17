@@ -52,22 +52,33 @@ func _setup_world() -> void:
 	var world := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("#18253b")
+	env.background_color = Color("#1c2940")
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("#ffffff")
-	env.ambient_light_energy = 0.85
+	env.ambient_light_energy = 0.65
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_BG
 	world.environment = env
 	add_child(world)
 
 	var light := DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-45, -35, 0)
-	light.light_energy = 1.7
+	light.rotation_degrees = Vector3(-50, -30, 0)
+	light.light_energy = 1.05
+	light.light_color = Color("#fff1dc")
+	light.shadow_enabled = true
 	add_child(light)
 
+	var fill_light := DirectionalLight3D.new()
+	fill_light.rotation_degrees = Vector3(-25, 140, 0)
+	fill_light.light_energy = 0.45
+	fill_light.light_color = Color("#a6caff")
+	add_child(fill_light)
+
 	camera = Camera3D.new()
-	camera.position = Vector3(0, 2.5, 8.5)
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 8.8
+	camera.position = Vector3(0, 2.0, 9.0)
 	add_child(camera)
-	camera.look_at(Vector3(0, 1.15, 0))
+	camera.look_at(Vector3(0, 1.45, 0), Vector3.UP)
 	camera.current = true
 
 	_add_box(self, Vector3(0, -0.3, 0), Vector3(10, 0.5, 10), Color("#30455c"))
@@ -84,7 +95,8 @@ func _add_box(parent: Node, pos: Vector3, size: Vector3, color: Color) -> MeshIn
 	instance.position = pos
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
-	mat.roughness = 1.0
+	mat.roughness = 0.92
+	mat.metallic = 0.0
 	instance.material_override = mat
 	parent.add_child(instance)
 	return instance
@@ -310,8 +322,8 @@ func _process(delta: float) -> void:
 	animation_time += delta
 	bounce = maxf(0.0, bounce - delta * 1.7)
 	hero.position.y = sin(animation_time * 1.8) * 0.05 + bounce
-	hero.rotation.y = sin(animation_time * 0.7) * 0.08
-	hero.rotation.z = sin(animation_time * 2.2) * 0.035
+	hero.rotation.y = sin(animation_time * 0.7) * 0.035
+	hero.rotation.z = 0.0
 	if combo > 0 and Time.get_ticks_msec() / 1000.0 - last_tap > 1.2:
 		combo = 0
 		_update_labels()

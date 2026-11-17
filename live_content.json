@@ -1,0 +1,8 @@
+{
+  "content_version": 1,
+  "message": "Clicker Mania: live content enabled",
+  "damage": 5,
+  "coins_multiplier": 1,
+  "xp_per_win": 25,
+  "arena_theme": "grass"
+}

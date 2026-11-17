@@ -1,0 +1,27 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/abarichello/godot-ci:4.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Android debug signing
+        run: |
+          mkdir -p "$HOME/.android" build
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+      - name: Import project
+        run: godot --headless --editor --path . --quit
+      - name: Export debug APK
+        run: godot --headless --path . --export-debug Android build/clicker-mania-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clicker-mania-debug-apk
+          path: build/clicker-mania-debug.apk
+          if-no-files-found: error

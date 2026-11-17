@@ -40,6 +40,9 @@ jobs:
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           cp "$HOME/.android/debug.keystore" ./debug.keystore
+          mkdir -p "$HOME/.config/godot"
+          printf '[gd_resource type="EditorSettings" format=3]\\n\\n[resource]\\nexport/android/android_sdk_path = "%s"\\nexport/android/java_sdk_path = "%s"\\nexport/android/debug_keystore = "%s"\\nexport/android/debug_keystore_user = "androiddebugkey"\\nexport/android/debug_keystore_pass = "android"\\n' "$ANDROID_HOME" "$JAVA_HOME" "$PWD/debug.keystore" > "$HOME/.config/godot/editor_settings-4.tres"
+          cat "$HOME/.config/godot/editor_settings-4.tres"
           godot --headless --editor --path . --quit
           godot --headless --path . --export-debug Android build/clicker-mania-debug.apk
       - uses: actions/upload-artifact@v4
